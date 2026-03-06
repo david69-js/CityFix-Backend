@@ -17,7 +17,7 @@ services:
       # Database configuration
       - DB_CONNECTION=mysql
       - DB_HOST=mysql_cityfix
-      - DB_PORT=3306
+      - DB_PORT=3307
       - DB_DATABASE=${MYSQL_DATABASE:-cityfix}
       - DB_USERNAME=${MYSQL_USER:-cityfix_user}
       - DB_PASSWORD=${MYSQL_PASSWORD:-root}
@@ -31,7 +31,7 @@ services:
     container_name: nginx_cityfix
     restart: unless-stopped
     ports:
-      - "8000:80"
+      - "8080:80"
     volumes:
       - ./laravel-app:/var/www/cityfix
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
@@ -50,7 +50,7 @@ services:
       MYSQL_USER: ${MYSQL_USER:-cityfix_user}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-root}
     ports:
-      - "${DB_PORT:-3306}:3306"
+      - "${DB_PORT:-3307}:3306"
     volumes:
       - dbdata:/var/lib/mysql
     networks:

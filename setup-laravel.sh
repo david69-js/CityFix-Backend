@@ -87,7 +87,7 @@ wait_for_db() {
     echo "Waiting for database connection..."
     max_attempts=30
     attempt=1
-    until su -s /bin/bash www-data -c "php -r 'new PDO(\"mysql:host=${DB_HOST:-mysql_cityfix};dbname=${DB_DATABASE:-cityfix};port=${DB_PORT:-3306}\", \"${DB_USERNAME:-cityfix_user}\", \"${DB_PASSWORD:-root}\");' >/dev/null 2>&1"; do
+    until su -s /bin/bash www-data -c "php -r 'new PDO(\"mysql:host=${DB_HOST:-mysql_cityfix};dbname=${DB_DATABASE:-cityfix};port=${DB_PORT:-3307}\", \"${DB_USERNAME:-cityfix_user}\", \"${DB_PASSWORD:-root}\");' >/dev/null 2>&1"; do
         if [ $attempt -ge $max_attempts ]; then
             echo "Database still not ready after $max_attempts attempts"
             break
