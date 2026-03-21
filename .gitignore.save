@@ -32,3 +32,7 @@ auth.json
 # Archivos raros de ssh-agent
 eval "$(ssh-agent -s)"
 eval "$(ssh-agent -s)".pub
+
+
+
+
