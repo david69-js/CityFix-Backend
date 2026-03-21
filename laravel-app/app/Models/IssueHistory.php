@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class IssueHistory extends Model
 {
     protected $table = 'issue_history';
-    public $timestamps = false; 
+    public $timestamps = false;
 
     protected $fillable = ['issue_id', 'status_id', 'changed_by', 'changed_at'];
 
@@ -19,11 +19,11 @@ class IssueHistory extends Model
 
     public function status(): BelongsTo
     {
-        return $this->belongsTo(IssueStatus::class, 'status_id');
+        return $this->belongsTo(IssueStatus::class , 'status_id');
     }
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'changed_by');
+        return $this->belongsTo(User::class , 'changed_by');
     }
 }

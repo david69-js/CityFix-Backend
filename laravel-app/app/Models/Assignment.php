@@ -21,6 +21,6 @@ class Assignment extends Model
 
     public function status(): BelongsTo
     {
-        return $this->belongsTo(AssignmentStatus::class, 'status_id');
+        return $this->belongsTo(AssignmentStatus::class , 'status_id');
     }
 }

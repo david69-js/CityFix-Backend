@@ -12,6 +12,6 @@ class AssignmentStatus extends Model
 
     public function assignments(): HasMany
     {
-        return $this->hasMany(Assignment::class, 'status_id');
+        return $this->hasMany(Assignment::class , 'status_id');
     }
 }

@@ -9,13 +9,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Issue extends Model
 {
     protected $fillable = [
-        'user_id', 'category_id', 'title', 'description', 
+        'user_id', 'category_id', 'title', 'description',
         'location', 'latitude', 'longitude', 'status_id'
     ];
 
     public function author(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class , 'user_id');
     }
 
     public function category(): BelongsTo
@@ -25,7 +25,7 @@ class Issue extends Model
 
     public function status(): BelongsTo
     {
-        return $this->belongsTo(IssueStatus::class, 'status_id');
+        return $this->belongsTo(IssueStatus::class , 'status_id');
     }
 
     public function images(): HasMany
