@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('assignments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('issue_id')->constrained('issues')->onDelete('cascade');
-            $table->foreignId('worker_id')->constrained('workers')->onDelete('cascade');
+            $table->foreignId('worker_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('status_id')->constrained('assignment_status');
             $table->text('notes')->nullable();
             $table->timestamp('assigned_at')->useCurrent();

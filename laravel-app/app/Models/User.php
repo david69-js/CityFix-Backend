@@ -26,9 +26,9 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(Issue::class);
     }
 
-    public function worker(): HasOne
+    public function assignments(): HasMany
     {
-        return $this->hasOne(Worker::class);
+        return $this->hasMany(Assignment::class, 'worker_id');
     }
 
     public function notifications(): HasMany

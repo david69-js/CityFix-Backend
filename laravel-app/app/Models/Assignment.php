@@ -16,7 +16,7 @@ class Assignment extends Model
 
     public function worker(): BelongsTo
     {
-        return $this->belongsTo(Worker::class);
+        return $this->belongsTo(User::class, 'worker_id');
     }
 
     public function status(): BelongsTo

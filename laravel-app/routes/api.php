@@ -17,7 +17,6 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UpvoteController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\WorkerController;
 
 Route::group([
     'middleware' => 'api',
@@ -43,4 +42,3 @@ Route::apiResource('permissions', PermissionController::class);
 Route::apiResource('roles', RoleController::class);
 Route::apiResource('upvotes', UpvoteController::class);
 Route::apiResource('users', UserController::class);
-Route::apiResource('workers', WorkerController::class);
