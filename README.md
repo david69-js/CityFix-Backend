@@ -111,3 +111,8 @@ docker logs -f nginx_cityfix
 - `nginx-production.conf`: Production web server configuration with SSL termination.
 - `setup-laravel.sh`: Automation script that handles permissions, dependencies, and database migrations.
 - `entrypoint.sh`: Executed on container start; runs the setup script before starting PHP-FPM.
+
+## API Documentation
+
+If you are developing the frontend or want to test the API endpoints, please check the [**Payloads.md**](Payloads.md) file.
+It contains the completely updated JSON structures, endpoints, multipart form-data requests for image uploads, and route rules for the whole CityFix backend.

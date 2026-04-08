@@ -1,6 +1,6 @@
 # Documentación de Payloads (CityFix Backend)
 
-Esta guía detalla la estructura JSON (payloads) que debes enviar en el cuerpo (body) de las peticiones para crear o actualizar registros. La información listada está basada estrictamente en la base de datos (migraciones) y las propiedades que permite guardar el backend de Laravel.
+Esta guía detalla la estructura JSON (payloads) que debes enviar en el cuerpo (body) de las peticiones para crear o actualizar registros. La información listada está basada en las modificaciones recientes de la API para soportar autenticación automatizada, GPS e imágenes de manera optimizada.
 
 Para actualizar registros (ej. `PUT /api/X/{id}`), se usa el mismo formato de JSON, aunque todos los campos suelen ser opcionales para solo actualizar lo que necesites.
 
@@ -16,9 +16,11 @@ Para actualizar registros (ej. `PUT /api/X/{id}`), se usa el mismo formato de JS
   "first_name": "Juan",
   "last_name": "Pérez",
   "email": "juan@example.com",
-  "password": "password123"
+  "password": "password123",
+  "invitation_code": "WORKER-1234" 
 }
 ```
+*(Nota: El campo `invitation_code` es opcional. Si lo envías y es válido, asignará el rol correspondiente, como Trabajador o Admin. Si no lo envías, serás un Ciudadano base).*
 
 ### Inicio de Sesión (Login)
 - **Ruta:** `POST /api/auth/login`
@@ -34,31 +36,24 @@ Para actualizar registros (ej. `PUT /api/X/{id}`), se usa el mismo formato de JS
 
 ## ⚠️ Reportes Ciudadanos (Issues)
 
-### Crear / Administrar un Reporte
-- **Rutas CRUD:** `POST /api/issues` | `PUT /api/issues/{id}`
-- **Payload:**
-```json
-{
-  "user_id": 1,
-  "category_id": 3,
-  "title": "Bache en Avenida Principal",
-  "description": "Hay un bache gigante que daña los coches y provoca accidentes.",
-  "location": "Av. Principal esq. Calle 2",
-  "latitude": 19.432608,
-  "longitude": -99.133209,
-  "status_id": 1
-}
-```
+### Crear un Reporte Nuevo
+- **Rutas CRUD:** `POST /api/issues`
+- **Tipo de Contenido:** `multipart/form-data` *(Importante: Ya NO es JSON puro porque soporta archivos).*
+- **Payload (Campos del Formulario):**
+  - `category_id`: 3
+  - `title`: "Bache en Avenida Principal"
+  - `description`: "Hay un bache gigante que daña los coches y provoca accidentes."
+  - `location`: "Av. Principal esq. Calle 2"
+  - `latitude`: 19.432608
+  - `longitude`: -99.133209
+  - `image`: *(Archivo opcional de tipo jpeg, png, jpg, gif que no exceda 5MB)*
 
-### Añadir Imagen a un Reporte
-- **Ruta:** `POST /api/issue-images`
-- **Payload:**
-```json
-{
-  "issue_id": 15,
-  "image_url": "https://storage.midominio.com/imagen_del_bache.jpg"
-}
-```
+*(El `user_id` y el `status_id = 1` se auto-inyectan en el servidor).*
+
+### Obtener el Feed Interactivo
+- **Ruta:** `GET /api/issues/feed`
+- **Query Params (Opcionales):** `?per_page=15`
+- **Retorno:** Devuelve el array paginado listo para consumir en tu app. Incluye a los `images`, el responsable `user`, la `category` y los conteos pre-calculados de `upvotes_count` y `comments_count`.
 
 ### Categorías de Reportes
 - **Ruta:** `POST /api/categories`
@@ -87,26 +82,27 @@ Para actualizar registros (ej. `PUT /api/X/{id}`), se usa el mismo formato de JS
 ## 💬 Interacción Ciudadana
 
 ### Comentar en un Reporte
-- **Rutas:** `POST /api/issues/{issue}/comments` o `POST /api/comments`
+- **Rutas Optimizadas:** `POST /api/issues/{issue_id}/comments`
+- **Payload:**
+```json
+{
+  "comment": "Tengo el mismo problema en mi calle de al lado."
+}
+```
+*(Nota: El `user_id` ya se detecta de forma automática vía Token).*
+
+- **Ruta Alternativa (CRUD Base):** `POST /api/comments`
 - **Payload:**
 ```json
 {
   "issue_id": 15,
-  "user_id": 2,
-  "comment": "Tengo el mismo problema en mi calle de al lado."
+  "comment": "¡Gracias por reparar este bache!"
 }
 ```
 
-### Votar / Apoyar un Reporte (Upvotes)
-- **Ruta principal:** `POST /api/issues/{issue}/toggle-upvote` *(No requiere JSON body ya que toma el Auth Token)*
-- **Ruta manual (Admin):** `POST /api/upvotes`
-- **Payload manual:**
-```json
-{
-  "issue_id": 15,
-  "user_id": 3
-}
-```
+### Votar / Apoyar un Reporte (Upvotes Toggle)
+- **Ruta principal:** `POST /api/issues/{issue_id}/toggle-upvote`
+- **Payload:** No requiere nada en el Body. Solamente se requiere el Token de autenticación en la cabecera. Si detecta que no habías votado, agregará el voto. Si ya habías votado, lo quitará previniendo el spam.
 
 ---
 
