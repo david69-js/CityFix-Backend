@@ -1,8 +1,13 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 
+// Auth
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Api\PasswordResetController;
+
+// Controllers
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\AssignmentStatusController;
 use App\Http\Controllers\CategoryController;
@@ -16,18 +21,33 @@ use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UpvoteController;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\AuthController;
 
-Route::group([
-    'middleware' => 'api',
-    'prefix' => 'auth'
-], function ($router) {
-    Route::post('register', [AuthController::class, 'register']);
-    Route::post('login', [AuthController::class, 'login']);
-    Route::post('logout', [AuthController::class, 'logout'])->middleware('auth:api');
-    Route::post('refresh', [AuthController::class, 'refresh'])->middleware('auth:api');
-    Route::get('me', [AuthController::class, 'me'])->middleware('auth:api');
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+*/
+
+// =============================
+// AUTH ROUTES
+// =============================
+Route::prefix('auth')->group(function () {
+    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/login', [AuthController::class, 'login']);
+
+    Route::post('/forgot-password', [PasswordResetController::class, 'requestReset']);
+    Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
+
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/me', [AuthController::class, 'me']);
+        Route::post('/logout', [AuthController::class, 'logout']);
+    });
 });
+
+// =============================
+// PUBLIC OR PROTECTED RESOURCES
+// =============================
+// Para proteger TODO, luego lo metemos dentro de auth:sanctum
 
 Route::apiResource('assignments', AssignmentController::class);
 Route::apiResource('assignment-statuses', AssignmentStatusController::class);
@@ -42,3 +62,23 @@ Route::apiResource('permissions', PermissionController::class);
 Route::apiResource('roles', RoleController::class);
 Route::apiResource('upvotes', UpvoteController::class);
 Route::apiResource('users', UserController::class);
+
+// =============================
+// ROLE TEST ROUTES
+// =============================
+
+Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
+    Route::get('/admin-only', function () {
+        return response()->json([
+            'message' => 'Solo Admin'
+        ]);
+    });
+});
+
+Route::middleware(['auth:sanctum', 'role:Worker,Admin'])->group(function () {
+    Route::get('/worker-or-admin', function () {
+        return response()->json([
+            'message' => 'Worker o Admin'
+        ]);
+    });
+});
