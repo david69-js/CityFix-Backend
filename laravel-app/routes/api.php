@@ -30,7 +30,7 @@ use App\Http\Controllers\UserController;
 // routes/api.php
 Route::post('/seed', function () {
     try {
-        \Illuminate\Support\Facades\Artisan::call('db:seed');
+        \Illuminate\Support\Facades\Artisan::call('db:seed', ['--force' => true]);
         $output = \Illuminate\Support\Facades\Artisan::output();
         return response()->json([
             'message' => 'Seeders executed',
