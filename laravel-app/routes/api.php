@@ -27,6 +27,11 @@ use App\Http\Controllers\UserController;
 | API Routes
 |--------------------------------------------------------------------------
 */
+// routes/api.php
+Route::post('/seed', function () {
+    \Illuminate\Support\Facades\Artisan::call('db:seed');
+    return response()->json(['message' => 'Seeders executed']);
+});
 
 // =============================
 // AUTH ROUTES
