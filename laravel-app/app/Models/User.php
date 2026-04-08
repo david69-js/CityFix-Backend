@@ -2,14 +2,14 @@
 
 namespace App\Models;
 
-use Laravel\Sanctum\HasApiTokens;
+use Tymon\JWTAuth\Contracts\JWTSubject;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class User extends Authenticatable
+class User extends Authenticatable implements JWTSubject
 {
-    use HasApiTokens, Notifiable;
+    use Notifiable;
 
     protected $fillable = [
         'first_name',
@@ -33,5 +33,15 @@ class User extends Authenticatable
     public function hasRole(string $roleName): bool
     {
         return strtolower($this->role?->name) === strtolower($roleName);
+    }
+
+    public function getJWTIdentifier()
+    {
+        return $this->getKey();
+    }
+
+    public function getJWTCustomClaims()
+    {
+        return [];
     }
 }
