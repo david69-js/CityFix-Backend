@@ -1,12 +1,13 @@
-FROM php:8.2-fpm
+FROM php:8.3-apache
 
-# Install system dependencies (incluyendo las de GD)
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     libpng-dev \
     libjpeg-dev \
     libfreetype6-dev \
     libonig-dev \
     libxml2-dev \
+    libpq-dev \
     zip \
     unzip \
     git \
@@ -14,28 +15,50 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Configure and install GD with JPEG and FreeType support
+# Configure and install GD
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg
-
-# Install PHP extensions
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+RUN docker-php-ext-install pdo_mysql pdo_pgsql pgsql mbstring exif pcntl bcmath gd
 
 # Install Composer
 COPY --from=composer:2.6 /usr/bin/composer /usr/bin/composer
+ENV COMPOSER_ALLOW_SUPERUSER=1
 
-# Create directory structure
-RUN mkdir -p /var/www/cityfix
+# Enable Apache modules required by Laravel/mod_php and avoid MPM conflicts
+RUN a2dismod mpm_event mpm_worker || true \
+    && a2enmod mpm_prefork rewrite
+
+# Set a global ServerName to silence AH00558 warnings in container environments
+RUN echo "ServerName localhost" > /etc/apache2/conf-available/servername.conf \
+    && a2enconf servername
+
+# Set Apache document root to Laravel's public directory
+ENV APACHE_DOCUMENT_ROOT=/var/www/cityfix/public
+RUN sed -ri 's|/var/www/html|${APACHE_DOCUMENT_ROOT}|g' /etc/apache2/sites-available/000-default.conf
+
+# Write a clean ports.conf with a placeholder port that entrypoint.sh will replace at runtime
+RUN printf 'Listen PLACEHOLDER_PORT\n\n<IfModule ssl_module>\n\tListen 443\n</IfModule>\n\n<IfModule mod_gnutls.c>\n\tListen 443\n</IfModule>\n' > /etc/apache2/ports.conf
 
 # Set working directory
 WORKDIR /var/www/cityfix
 
-# Copy setup script
-COPY setup-laravel.sh /usr/local/bin/setup-laravel.sh
-RUN chmod +x /usr/local/bin/setup-laravel.sh
+# Copy your Laravel code from the repository
+COPY laravel-app/ .
 
-# Create entrypoint script that runs setup and then php-fpm
+# Install composer dependencies
+RUN composer install --no-dev --optimize-autoloader --no-interaction
+
+# Create necessary directories and set proper permissions
+RUN mkdir -p storage/framework/{sessions,views,cache} \
+    && mkdir -p storage/logs \
+    && mkdir -p bootstrap/cache \
+    && chown -R www-data:www-data /var/www/cityfix \
+    && chmod -R 775 storage bootstrap/cache
+
+# Copy entrypoint
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-EXPOSE 9000
+# The default EXPOSE is useful as a fallback
+EXPOSE 80
+
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
