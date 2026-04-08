@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Upvote;
+use App\Models\Issue;
 use Illuminate\Http\Request;
 
 class UpvoteController extends Controller
@@ -39,5 +40,23 @@ class UpvoteController extends Controller
     {
         $upvote->delete();
         return response()->json(null, 204);
+    }
+
+    public function toggle(Issue $issue)
+    {
+        $userId = auth('api')->id();
+
+        $upvote = Upvote::where('issue_id', $issue->id)->where('user_id', $userId)->first();
+
+        if ($upvote) {
+            $upvote->delete();
+            return response()->json(['message' => 'Upvote removido'], 200);
+        } else {
+            Upvote::create([
+                'issue_id' => $issue->id,
+                'user_id' => $userId
+            ]);
+            return response()->json(['message' => 'Upvote agregado'], 201);
+        }
     }
 }

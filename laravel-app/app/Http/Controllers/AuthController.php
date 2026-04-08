@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
+use App\Models\InvitationCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Routing\Controller;
@@ -49,15 +50,31 @@ class AuthController extends Controller
             'last_name' => 'required|string|between:2,100',
             'email' => 'required|string|email|max:100|unique:users',
             'password' => 'required|string|min:6', // Ensure you send "password" field
+            'invitation_code' => 'sometimes|nullable|string',
         ]);
 
-        $user = User::create(array_merge(
-            $validated,
-            [
-                'password' => Hash::make($request->password),
-                'role_id' => 1 // Assign a default role ID, assuming 1 is your basic User role
-            ]
-        ));
+        $roleId = 1; // Default is Citizen
+
+        if (!empty($validated['invitation_code'])) {
+            $invitation = InvitationCode::where('code', $validated['invitation_code'])->first();
+            
+            if (!$invitation || !$invitation->isValid()) {
+                return response()->json(['error' => 'Código de invitación inválido o expirado'], 422);
+            }
+
+            $roleId = $invitation->role_id;
+            
+            // Increment usage
+            $invitation->increment('used_count');
+        }
+
+        $user = User::create([
+            'first_name' => $validated['first_name'],
+            'last_name'  => $validated['last_name'],
+            'email'      => $validated['email'],
+            'password'   => Hash::make($request->password),
+            'role_id'    => $roleId
+        ]);
 
         $token = auth('api')->login($user);
 
