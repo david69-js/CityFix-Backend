@@ -53,7 +53,8 @@ class AuthController extends Controller
             'invitation_code' => 'sometimes|nullable|string',
         ]);
 
-        $roleId = 1; // Default is Citizen
+        $defaultRole = \App\Models\Role::where('name', 'Citizen')->first();
+        $roleId = $defaultRole ? $defaultRole->id : null; // Defaults to Citizen dynamically
 
         if (!empty($validated['invitation_code'])) {
             $invitation = InvitationCode::where('code', $validated['invitation_code'])->first();
