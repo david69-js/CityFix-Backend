@@ -29,8 +29,20 @@ use App\Http\Controllers\UserController;
 */
 // routes/api.php
 Route::post('/seed', function () {
-    \Illuminate\Support\Facades\Artisan::call('db:seed');
-    return response()->json(['message' => 'Seeders executed']);
+    try {
+        \Illuminate\Support\Facades\Artisan::call('db:seed');
+        $output = \Illuminate\Support\Facades\Artisan::output();
+        return response()->json([
+            'message' => 'Seeders executed',
+            'output' => $output
+        ]);
+    } catch (\Throwable $e) {
+        return response()->json([
+            'message' => 'Seeder failed',
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ], 500);
+    }
 });
 
 // =============================
