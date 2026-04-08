@@ -45,9 +45,19 @@ Route::prefix('auth')->group(function () {
 });
 
 // =============================
-// PUBLIC OR PROTECTED RESOURCES
+// CUSTOM ISSUE ROUTES
 // =============================
-// Para proteger TODO, luego lo metemos dentro de auth:sanctum
+// Estas van ANTES de apiResource('issues')
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/issues/feed', [IssueController::class, 'feed']);
+    Route::post('/issues/{issue}/toggle-upvote', [UpvoteController::class, 'toggle']);
+    Route::post('/issues/{issue}/comments', [CommentController::class, 'store']);
+});
+
+// =============================
+// API RESOURCES
+// =============================
 
 Route::apiResource('assignments', AssignmentController::class);
 Route::apiResource('assignment-statuses', AssignmentStatusController::class);

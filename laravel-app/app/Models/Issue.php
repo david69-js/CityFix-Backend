@@ -9,13 +9,24 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Issue extends Model
 {
     protected $fillable = [
-        'user_id', 'category_id', 'title', 'description', 
-        'location', 'latitude', 'longitude', 'status_id'
+        'user_id',
+        'category_id',
+        'title',
+        'description',
+        'location',
+        'latitude',
+        'longitude',
+        'status_id',
     ];
 
-    public function author(): BelongsTo
+    protected $casts = [
+        'latitude' => 'decimal:7',
+        'longitude' => 'decimal:7',
+    ];
+
+    public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class);
     }
 
     public function category(): BelongsTo
@@ -33,13 +44,18 @@ class Issue extends Model
         return $this->hasMany(IssueImage::class);
     }
 
-    public function assignments(): HasMany
+    public function upvotes(): HasMany
     {
-        return $this->hasMany(Assignment::class);
+        return $this->hasMany(Upvote::class);
     }
 
     public function comments(): HasMany
     {
         return $this->hasMany(Comment::class);
+    }
+
+    public function history(): HasMany
+    {
+        return $this->hasMany(IssueHistory::class);
     }
 }

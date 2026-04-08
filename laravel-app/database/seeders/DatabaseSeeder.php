@@ -20,6 +20,10 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder::class,
             AdminUserSeeder::class,
             NotificationSeeder::class,
+            IssueStatusSeeder::class,
+            InvitationCodeSeeder::class,
+
+
         ]);
     }
 }

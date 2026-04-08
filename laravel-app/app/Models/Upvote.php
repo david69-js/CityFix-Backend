@@ -7,16 +7,20 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Upvote extends Model
 {
-    public $timestamps = false;
-    protected $fillable = ['user_id', 'issue_id'];
+    protected $table = 'upvotes';
 
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
-    }
+    protected $fillable = [
+        'issue_id',
+        'user_id',
+    ];
 
     public function issue(): BelongsTo
     {
         return $this->belongsTo(Issue::class);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 }
