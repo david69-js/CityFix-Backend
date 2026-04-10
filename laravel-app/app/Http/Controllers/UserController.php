@@ -29,10 +29,19 @@ class UserController extends Controller
     public function update(Request $request, User $user)
     {
         $validated = $request->validate([
-            // Add your validation rules
+            'first_name' => 'sometimes|string|max:100',
+            'last_name' => 'sometimes|string|max:100',
+            'email' => 'sometimes|string|email|max:100|unique:users,email,' . $user->id,
+            'role_id' => 'sometimes|exists:roles,id',
+            'phone' => 'sometimes|string|max:20',
         ]);
+
         $user->update($validated);
-        return response()->json($user);
+        
+        return response()->json([
+            'message' => 'User updated successfully',
+            'user' => $user->load('role')
+        ]);
     }
 
     public function destroy(User $user)

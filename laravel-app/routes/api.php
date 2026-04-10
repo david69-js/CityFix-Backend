@@ -21,6 +21,7 @@ use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UpvoteController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\InvitationCodeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -89,6 +90,8 @@ Route::apiResource('permissions', PermissionController::class);
 Route::apiResource('roles', RoleController::class);
 Route::apiResource('upvotes', UpvoteController::class);
 Route::apiResource('users', UserController::class);
+Route::post('invitation-codes/redeem', [InvitationCodeController::class, 'redeem'])->middleware('auth:sanctum');
+Route::apiResource('invitation-codes', InvitationCodeController::class);
 
 // =============================
 // ROLE TEST ROUTES
@@ -109,3 +112,5 @@ Route::middleware(['auth:sanctum', 'role:Worker,Admin'])->group(function () {
         ]);
     });
 });
+
+Route::get('users', [UserController::class, 'index']);
