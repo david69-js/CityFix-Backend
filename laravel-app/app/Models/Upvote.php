@@ -9,6 +9,8 @@ class Upvote extends Model
 {
     protected $table = 'upvotes';
 
+    public $timestamps = false;
+
     protected $fillable = [
         'issue_id',
         'user_id',
