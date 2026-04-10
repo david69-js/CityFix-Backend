@@ -56,7 +56,7 @@ Route::prefix('auth')->group(function () {
     Route::post('/forgot-password', [PasswordResetController::class, 'requestReset']);
     Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
 
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware('auth:api')->group(function () {
         Route::get('/me', [AuthController::class, 'me']);
         Route::post('/logout', [AuthController::class, 'logout']);
     });
@@ -67,8 +67,9 @@ Route::prefix('auth')->group(function () {
 // =============================
 // Estas van ANTES de apiResource('issues')
 
-Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/issues/feed', [IssueController::class, 'feed']);
+Route::get('/issues/feed', [IssueController::class, 'feed']);
+
+Route::middleware('auth:api')->group(function () {
     Route::post('/issues/{issue}/toggle-upvote', [UpvoteController::class, 'toggle']);
     Route::post('/issues/{issue}/comments', [CommentController::class, 'store']);
 });
@@ -90,14 +91,14 @@ Route::apiResource('permissions', PermissionController::class);
 Route::apiResource('roles', RoleController::class);
 Route::apiResource('upvotes', UpvoteController::class);
 Route::apiResource('users', UserController::class);
-Route::post('invitation-codes/redeem', [InvitationCodeController::class, 'redeem'])->middleware('auth:sanctum');
+Route::post('invitation-codes/redeem', [InvitationCodeController::class, 'redeem'])->middleware('auth:api');
 Route::apiResource('invitation-codes', InvitationCodeController::class);
 
 // =============================
 // ROLE TEST ROUTES
 // =============================
 
-Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
+Route::middleware(['auth:api', 'role:Admin'])->group(function () {
     Route::get('/admin-only', function () {
         return response()->json([
             'message' => 'Solo Admin'
@@ -105,7 +106,7 @@ Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
     });
 });
 
-Route::middleware(['auth:sanctum', 'role:Worker,Admin'])->group(function () {
+Route::middleware(['auth:api', 'role:Worker,Admin'])->group(function () {
     Route::get('/worker-or-admin', function () {
         return response()->json([
             'message' => 'Worker o Admin'

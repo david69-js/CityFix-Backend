@@ -67,7 +67,7 @@ class IssueController extends Controller
 
     public function feed(Request $request)
     {
-        $authUserId = $request->user()->id;
+        $authUserId = auth('api')->id();
 
         $issues = Issue::query()
             ->with([
