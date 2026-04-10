@@ -72,13 +72,17 @@ token: 7w5gET6FccSiCmZ0pIx2wRACDoHaw9zEDUtuQlr6J7QMkRQZZPwLoenXfyQT2DWw
 - **Rutas CRUD:** `POST /api/issues`
 - **Tipo de Contenido:** `multipart/form-data` *(Importante: Ya NO es JSON puro porque soporta archivos).*
 - **Payload (Campos del Formulario):**
-  - `category_id`: 3
-  - `title`: "Bache en Avenida Principal"
-  - `description`: "Hay un bache gigante que daña los coches y provoca accidentes."
-  - `location`: "Av. Principal esq. Calle 2"
-  - `latitude`: 19.432608
-  - `longitude`: -99.133209
-  - `image`: *(Archivo opcional de tipo jpeg, png, jpg, gif que no exceda 5MB)*
+```json
+{
+  "category_id": 3,
+  "title": "Bache en Avenida Principal",
+  "description": "Hay un bache gigante que daña los coches y provoca accidentes.",
+  "location": "Av. Principal esq. Calle 2",
+  "latitude": 19.432608,
+  "longitude": -99.133209,
+  "image": "File"
+}
+```
 
 *(El `user_id` y el `status_id = 1` se auto-inyectan en el servidor).*
 
