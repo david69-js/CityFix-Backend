@@ -18,5 +18,10 @@ class RoleSeeder extends Seeder
             ['name' => 'Worker'],
             ['description' => 'Trabajador del sistema']
         );
+
+        Role::firstOrCreate(
+            ['name' => 'Citizen'],
+            ['description' => 'Ciudadano del sistema']
+        );
     }
 }
