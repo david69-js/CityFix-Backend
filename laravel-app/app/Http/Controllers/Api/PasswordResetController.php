@@ -36,16 +36,22 @@ class PasswordResetController extends Controller
             'expires_at' => now()->addMinutes(30),
         ]);
 
-        // Aquí puedes enviar por correo un link real del frontend
-        // ejemplo: https://tu-frontend.com/reset-password?token=XXXX
+        $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
+        $resetLink = "{$frontendUrl}/reset-password?token={$plainToken}&email=" . urlencode($user->email);
 
-        Mail::raw(
-            "Tu token de recuperación es: {$plainToken}",
-            function ($message) use ($user) {
-                $message->to($user->email)
-                    ->subject('Recuperación de contraseña');
-            }
-        );
+        Mail::send([], [], function ($message) use ($user, $resetLink) {
+            $message->to($user->email)
+                ->subject('Recuperación de contraseña')
+                ->html("
+                    <h1>Recuperación de Contraseña</h1>
+                    <p>Has solicitado restablecer tu contraseña. Haz clic en el siguiente enlace para continuar:</p>
+                    <p><a href='{$resetLink}' style='padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;'>Restablecer Contraseña</a></p>
+                    <p>Si no solicitaste este cambio, puedes ignorar este correo.</p>
+                    <br>
+                    <p>O copia y pega este enlace en tu navegador:</p>
+                    <p>{$resetLink}</p>
+                ");
+        });
 
         return response()->json([
             'message' => 'Si el correo existe, se enviará un enlace de recuperación.'
