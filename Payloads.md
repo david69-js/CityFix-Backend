@@ -34,6 +34,38 @@ Para actualizar registros (ej. `PUT /api/X/{id}`), se usa el mismo formato de JS
 
 ---
 
+## 🔑 Recuperación de Contraseña
+``` Ejemplo
+Link Completo=http://localhost:3000/reset-password?token=7w5gET6FccSiCmZ0pIx2wRACDoHaw9zEDUtuQlr6J7QMkRQZZPwLoenXfyQT2DWw&email=david%40studio31.io
+
+token: 7w5gET6FccSiCmZ0pIx2wRACDoHaw9zEDUtuQlr6J7QMkRQZZPwLoenXfyQT2DWw
+
+```
+
+### 1. Solicitar enlace de recuperación
+- **Ruta:** `POST /api/auth/forgot-password`
+- **Payload:**
+```json
+{
+  "email": "juan@example.com"
+}
+```
+*(Nota: Esto enviará un correo electrónico con un enlace que contiene un token único con validez de 30 minutos).*
+
+### 2. Restablecer la contraseña (desde el enlace)
+- **Ruta:** `POST /api/auth/reset-password`
+- **Payload:**
+```json
+{
+  "email": "juan@example.com",
+  "token": "token_recibido_en_el_correo",
+  "password": "nuevaPassword123",
+  "password_confirmation": "nuevaPassword123"
+}
+```
+
+---
+
 ## ⚠️ Reportes Ciudadanos (Issues)
 
 ### Crear un Reporte Nuevo
