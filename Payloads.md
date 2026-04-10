@@ -20,7 +20,7 @@ Para actualizar registros (ej. `PUT /api/X/{id}`), se usa el mismo formato de JS
   "invitation_code": "WORKER-1234" 
 }
 ```
-*(Nota: El campo `invitation_code` es opcional. Si lo envías y es válido, asignará el rol correspondiente, como Trabajador o Admin. Si no lo envías, serás un Ciudadano base).*
+*(Nota: El campo `invitation_code` es opcional. Si se proporciona un código válido de "Trabajador", el usuario será registrado automáticamente con ese rol. Si no se envía, el usuario será un "Ciudadano" por defecto).*
 
 ### Inicio de Sesión (Login)
 - **Ruta:** `POST /api/auth/login`
@@ -123,6 +123,18 @@ Para actualizar registros (ej. `PUT /api/X/{id}`), se usa el mismo formato de JS
 }
 ```
 
+### Actualizar Usuario (Cambio de Rol / Datos)
+- **Ruta:** `PUT /api/users/{id}`
+- **Payload:**
+```json
+{
+  "role_id": 2,
+  "first_name": "Ana Actualizada",
+  "phone": "5551234567"
+}
+```
+*(Nota: Un administrador puede usar esta ruta para cambiar el rol de un Ciudadano a Trabajador enviando el `role_id` correspondiente).*
+
 ### Roles
 - **Ruta:** `POST /api/roles`
 - **Payload:**
@@ -143,19 +155,19 @@ Para actualizar registros (ej. `PUT /api/X/{id}`), se usa el mismo formato de JS
 }
 ```
 
-### Códigos de Invitación (Para Trabajadores / Sistema)
+### Códigos de Invitación (Generación - Admin)
 - **Ruta:** `POST /api/invitation-codes`
 - **Payload:**
 ```json
 {
-  "code": "WORKER-1234",
-  "role_id": 3,
+  "code": "WORKER-2024-PRO",
+  "role_id": 2,
   "is_active": true,
   "expires_at": "2026-12-31 23:59:59",
-  "max_uses": 10,
-  "used_count": 0
+  "max_uses": 10
 }
 ```
+*(Nota: El campo `code` es opcional; si no se envía, el sistema generará uno aleatorio de 8 caracteres. El `role_id` determina qué rol obtendrá quien use el código).*
 
 ---
 
