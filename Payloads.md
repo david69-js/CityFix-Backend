@@ -122,9 +122,11 @@ token: 7w5gET6FccSiCmZ0pIx2wRACDoHaw9zEDUtuQlr6J7QMkRQZZPwLoenXfyQT2DWw
 - **Payload:**
 ```json
 {
+  "issue_id": issue_id,
   "comment": "Tengo el mismo problema en mi calle de al lado."
 }
 ```
+*(Nota: El `issue_id` es el id del reporte que se quiere comentar.)*
 *(Nota: El `user_id` ya se detecta de forma automática vía Token).*
 
 - **Ruta Alternativa (CRUD Base):** `POST /api/comments`

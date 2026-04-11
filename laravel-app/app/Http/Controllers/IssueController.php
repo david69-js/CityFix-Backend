@@ -52,7 +52,17 @@ class IssueController extends Controller
     public function feed(Request $request)
     {
         $perPage = $request->query('per_page', 15);
-        $issues = Issue::with(['user:id,first_name,last_name,avatar', 'category', 'status', 'images'])
+        $issues = Issue::with([
+            'user:id,first_name,last_name,avatar', 
+            'category', 
+            'status', 
+            'images',
+            'comments' => function($query) {
+                $query->with('user:id,first_name,last_name,avatar')
+                      ->latest()
+                      ->limit(3);
+            }
+        ])
             ->withCount(['upvotes', 'comments'])
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
@@ -62,7 +72,16 @@ class IssueController extends Controller
 
     public function show(Issue $issue)
     {
-        return response()->json($issue);
+        return response()->json($issue->load([
+            'user:id,first_name,last_name,avatar',
+            'category',
+            'status',
+            'images',
+            'comments' => function($query) {
+                $query->with('user:id,first_name,last_name,avatar')
+                      ->latest();
+            }
+        ]));
     }
 
     public function update(Request $request, Issue $issue)
