@@ -74,6 +74,8 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/issues/{issue}/comments', [CommentController::class, 'store']);
     Route::get('/my-assignments', [AssignmentController::class, 'myTray']);
     Route::patch('/issues/{issue}/status', [IssueController::class, 'updateStatus']);
+    Route::post('/users/fcm-token', [UserController::class, 'updateFcmToken']);
+    Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
 });
 
 // =============================
@@ -100,7 +102,8 @@ Route::apiResource('invitation-codes', InvitationCodeController::class);
 // ROLE TEST ROUTES
 // =============================
 
-Route::middleware(['auth:api', 'role:Admin'])->group(function () {
+Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
+    Route::post('/notifications/campaign', [NotificationController::class, 'storeCampaign']);
     Route::get('/admin-only', function () {
         return response()->json([
             'message' => 'Solo Admin'
