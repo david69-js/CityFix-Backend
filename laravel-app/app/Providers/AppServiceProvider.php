@@ -4,6 +4,11 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 
+use App\Models\Issue;
+use App\Models\Comment;
+use App\Observers\IssueObserver;
+use App\Observers\CommentObserver;
+
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -19,6 +24,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Issue::observe(IssueObserver::class);
+        Comment::observe(CommentObserver::class);
     }
 }
