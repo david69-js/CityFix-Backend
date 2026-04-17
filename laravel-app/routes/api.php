@@ -53,6 +53,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/issues/feed', [IssueController::class, 'feed']);
     Route::post('/issues/{issue}/toggle-upvote', [UpvoteController::class, 'toggle']);
     Route::post('/issues/{issue}/comments', [CommentController::class, 'store']);
+    Route::get('/my-assignments', [AssignmentController::class, 'myTray']);
+    Route::patch('/issues/{issue}/status', [IssueController::class, 'updateStatus']);
 });
 
 // =============================
