@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Notification as NotificationModel;
+use App\Services\FcmService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 
@@ -35,6 +36,11 @@ class GeneralNotification extends Notification
             'related_id' => null,
             'is_read' => false,
         ]);
+
+        // Intentar enviar Push si tiene token
+        if ($notifiable->fcm_token) {
+            FcmService::sendPush($notifiable->fcm_token, $this->title, $this->message);
+        }
 
         return [
             'title' => $this->title,

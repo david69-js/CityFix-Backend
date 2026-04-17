@@ -19,6 +19,7 @@ class User extends Authenticatable
         'phone',
         'avatar',
         'role_id',
+        'fcm_token',
     ];
 
     protected $hidden = [
@@ -33,5 +34,13 @@ class User extends Authenticatable
     public function hasRole(string $roleName): bool
     {
         return strtolower($this->role?->name) === strtolower($roleName);
+    }
+
+    /**
+     * Route notifications for the FCM channel.
+     */
+    public function routeNotificationForFcm()
+    {
+        return $this->fcm_token;
     }
 }
