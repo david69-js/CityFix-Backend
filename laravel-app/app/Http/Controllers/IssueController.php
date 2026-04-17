@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Issue;
 use App\Models\IssueImage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class IssueController extends Controller
@@ -97,5 +98,26 @@ class IssueController extends Controller
     {
         $issue->delete();
         return response()->json(null, 204);
+    }
+
+    public function updateStatus(Request $request, Issue $issue)
+    {
+        $validated = $request->validate([
+            'status_id' => 'required|exists:issue_statuses,id',
+        ]);
+
+        DB::transaction(function () use ($issue, $validated) {
+            $issue->update([
+                'status_id' => $validated['status_id']
+            ]);
+
+            $issue->history()->create([
+                'status_id' => $validated['status_id'],
+                'changed_by' => auth('api')->id(),
+                'changed_at' => now(),
+            ]);
+        });
+
+        return response()->json($issue->load('status', 'history'));
     }
 }

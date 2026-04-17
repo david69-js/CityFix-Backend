@@ -40,4 +40,14 @@ class AssignmentController extends Controller
         $assignment->delete();
         return response()->json(null, 204);
     }
+
+    public function myTray(Request $request)
+    {
+        $assignments = Assignment::where('worker_id', $request->user()->id)
+            ->with(['issue.category', 'issue.status', 'status'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json($assignments);
+    }
 }
