@@ -245,6 +245,63 @@ token: 7w5gET6FccSiCmZ0pIx2wRACDoHaw9zEDUtuQlr6J7QMkRQZZPwLoenXfyQT2DWw
 }
 ```
 
+### 📥 Mi Bandeja de Tareas (Trabajador)
+- **Ruta:** `GET /api/my-assignments`
+- **Auth:** Requiere Token (`Bearer`) en el header
+- **Payload:** No requiere body
+- **Retorno de ejemplo:**
+```json
+[
+  {
+    "id": 3,
+    "issue_id": 15,
+    "worker_id": 8,
+    "status_id": 1,
+    "notes": "Llevar material rápido.",
+    "assigned_at": "2026-04-08 09:00:00",
+    "created_at": "2026-04-08T09:00:00.000000Z",
+    "updated_at": "2026-04-08T09:00:00.000000Z",
+    "issue": {
+      "id": 15,
+      "title": "Bache en Avenida Principal",
+      "category": { "id": 3, "name": "Baches" },
+      "status": { "id": 1, "name": "Pendiente", "color": "#FFC107" }
+    },
+    "status": { "id": 1, "name": "Pendiente" }
+  }
+]
+```
+*(Nota: Solo devuelve las asignaciones donde `worker_id` == usuario autenticado, ordenadas de más reciente a más antigua).*
+
+### 🔄 Actualizar Estado de un Reporte (con Historial)
+- **Ruta:** `PATCH /api/issues/{id}/status`
+- **Auth:** Requiere Token (`Bearer`) en el header
+- **Payload:**
+```json
+{
+  "status_id": 2
+}
+```
+- **Retorno de ejemplo:**
+```json
+{
+  "id": 15,
+  "title": "Bache en Avenida Principal",
+  "status_id": 2,
+  "status": { "id": 2, "name": "En Progreso", "color": "#2196F3" },
+  "history": [
+    {
+      "id": 1,
+      "issue_id": 15,
+      "status_id": 2,
+      "changed_by": 8,
+      "changed_at": "2026-04-17T22:35:00.000000Z"
+    }
+  ]
+}
+```
+*(Nota: En una sola transacción actualiza `status_id` en el reporte e inserta un registro en `issue_history`. El `changed_by` se toma automáticamente del usuario autenticado).*
+
 ---
 
 ## 🔔 Notificaciones
