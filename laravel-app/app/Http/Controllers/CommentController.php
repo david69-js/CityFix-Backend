@@ -3,13 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Models\Comment;
+use App\Models\Issue;
 use Illuminate\Http\Request;
 
 class CommentController extends Controller
 {
-    public function index()
+    public function index(Issue $issue)
     {
-        return response()->json(Comment::all());
+        $comments = $issue->comments()
+            ->with('user:id,first_name,last_name,avatar,email')
+            ->latest()
+            ->get();
+
+        return response()->json($comments);
     }
 
     public function store(Request $request)
