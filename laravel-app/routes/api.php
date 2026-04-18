@@ -56,6 +56,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/issues/{issue}/comments', [CommentController::class, 'index']);
     Route::get('/my-assignments', [AssignmentController::class, 'myTray']);
     Route::patch('/issues/{issue}/status', [IssueController::class, 'updateStatus']);
+    Route::get('/issues/{issue}/history-logs', [IssueHistoryController::class, 'historyLogs']);
     Route::post('/users/fcm-token', [UserController::class, 'updateFcmToken']);
     Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
 });
