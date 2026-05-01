@@ -73,6 +73,8 @@ class IssueController extends Controller
 
     public function show(Issue $issue)
     {
+        $issue->loadCount(['upvotes', 'comments']);
+        
         return response()->json($issue->load([
             'user:id,first_name,last_name,avatar',
             'category',
