@@ -49,13 +49,22 @@ class AuthController extends Controller
             'last_name' => 'required|string|between:2,100',
             'email' => 'required|string|email|max:100|unique:users',
             'password' => 'required|string|min:6', // Ensure you send "password" field
+            'phone' => 'nullable|string|max:20',
+            'avatar' => 'nullable|image|max:2048', // 2MB Max
         ]);
+
+        if ($request->hasFile('avatar')) {
+            $validated['avatar'] = $request->file('avatar')->store('avatars', 'public');
+        }
+
+        $citizenRole = \App\Models\Role::where('name', 'Citizen')->first();
+        $roleId = $citizenRole ? $citizenRole->id : 3; // Fallback
 
         $user = User::create(array_merge(
             $validated,
             [
                 'password' => Hash::make($request->password),
-                'role_id' => 1 // Assign a default role ID, assuming 1 is your basic User role
+                'role_id' => $roleId
             ]
         ));
 

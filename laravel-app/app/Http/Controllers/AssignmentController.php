@@ -15,7 +15,11 @@ class AssignmentController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            // Add your validation rules
+            'issue_id'    => 'required|exists:issues,id',
+            'worker_id'   => 'required|exists:users,id',
+            'status_id'   => 'required|exists:assignment_statuses,id',
+            'notes'       => 'nullable|string',
+            'assigned_at' => 'required|date',
         ]);
         $assignment = Assignment::create($validated);
         return response()->json($assignment, 201);
@@ -29,7 +33,11 @@ class AssignmentController extends Controller
     public function update(Request $request, Assignment $assignment)
     {
         $validated = $request->validate([
-            // Add your validation rules
+            'issue_id'    => 'sometimes|exists:issues,id',
+            'worker_id'   => 'sometimes|exists:users,id',
+            'status_id'   => 'sometimes|exists:assignment_statuses,id',
+            'notes'       => 'nullable|string',
+            'assigned_at' => 'sometimes|date',
         ]);
         $assignment->update($validated);
         return response()->json($assignment);

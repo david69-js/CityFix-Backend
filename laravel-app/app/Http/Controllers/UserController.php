@@ -9,16 +9,29 @@ class UserController extends Controller
 {
     public function index()
     {
-        return response()->json(User::all());
+        return response()->json(User::with('role')->get());
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            // Add your validation rules
+            'first_name' => 'required|string|max:100',
+            'last_name' => 'required|string|max:100',
+            'email' => 'required|string|email|max:100|unique:users',
+            'password' => 'required|string|min:6',
+            'phone' => 'nullable|string|max:20',
+            'role_id' => 'required|exists:roles,id',
+            'avatar' => 'nullable|image|max:2048',
         ]);
+
+        if ($request->hasFile('avatar')) {
+            $validated['avatar'] = $request->file('avatar')->store('avatars', 'public');
+        }
+
+        $validated['password'] = \Illuminate\Support\Facades\Hash::make($validated['password']);
+
         $user = User::create($validated);
-        return response()->json($user, 201);
+        return response()->json($user->load('role'), 201);
     }
 
     public function show(User $user)
@@ -29,10 +42,25 @@ class UserController extends Controller
     public function update(Request $request, User $user)
     {
         $validated = $request->validate([
-            // Add your validation rules
+            'role_id' => 'sometimes|exists:roles,id',
+            'first_name' => 'sometimes|string|max:100',
+            'last_name' => 'sometimes|string|max:100',
+            'email' => 'sometimes|email|unique:users,email,' . $user->id,
+            'phone' => 'nullable|string|max:20',
+            'avatar' => 'nullable|image|max:2048',
+            'password' => 'sometimes|string|min:6',
         ]);
+
+        if ($request->hasFile('avatar')) {
+            $validated['avatar'] = $request->file('avatar')->store('avatars', 'public');
+        }
+
+        if (isset($validated['password'])) {
+            $validated['password'] = \Illuminate\Support\Facades\Hash::make($validated['password']);
+        }
+
         $user->update($validated);
-        return response()->json($user);
+        return response()->json($user->load('role'));
     }
 
     public function destroy(User $user)

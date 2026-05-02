@@ -77,13 +77,14 @@ Route::apiResource('notifications', NotificationController::class);
 Route::apiResource('permissions', PermissionController::class);
 Route::apiResource('roles', RoleController::class);
 Route::apiResource('upvotes', UpvoteController::class);
-Route::apiResource('users', UserController::class);
+// Users resource moved to Admin middleware
 
 // =============================
 // ROLE TEST ROUTES
 // =============================
 
 Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
+    Route::apiResource('users', UserController::class);
     Route::post('/notifications/campaign', [NotificationController::class, 'storeCampaign']);
     Route::get('/admin-only', function () {
         return response()->json([
