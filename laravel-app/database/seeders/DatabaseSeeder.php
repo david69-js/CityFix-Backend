@@ -19,9 +19,13 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             PermissionSeeder::class,
             AdminUserSeeder::class,
+            UserSeeder::class,
             NotificationSeeder::class,
             IssueStatusSeeder::class,
             InvitationCodeSeeder::class,
+            CategorySeeder::class,
+            IssueSeeder::class,
+            CommentSeeder::class,
 
 
         ]);

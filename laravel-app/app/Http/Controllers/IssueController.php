@@ -12,7 +12,7 @@ class IssueController extends Controller
 {
     public function index()
     {
-        return response()->json(Issue::all());
+        return response()->json(Issue::withCount('comments')->get());
     }
 
     public function store(Request $request)

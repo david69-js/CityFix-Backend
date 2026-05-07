@@ -72,8 +72,10 @@ Route::get('/issues/feed', [IssueController::class, 'feed']);
 Route::middleware('auth:api')->group(function () {
     Route::post('/issues/{issue}/toggle-upvote', [UpvoteController::class, 'toggle']);
     Route::post('/issues/{issue}/comments', [CommentController::class, 'store']);
+    Route::get('/issues/{issue}/comments', [CommentController::class, 'index']);
     Route::get('/my-assignments', [AssignmentController::class, 'myTray']);
     Route::patch('/issues/{issue}/status', [IssueController::class, 'updateStatus']);
+    Route::get('/issues/{issue}/history-logs', [IssueHistoryController::class, 'historyLogs']);
     Route::post('/users/fcm-token', [UserController::class, 'updateFcmToken']);
     Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
 });
@@ -94,15 +96,14 @@ Route::apiResource('notifications', NotificationController::class);
 Route::apiResource('permissions', PermissionController::class);
 Route::apiResource('roles', RoleController::class);
 Route::apiResource('upvotes', UpvoteController::class);
-Route::apiResource('users', UserController::class);
-Route::post('invitation-codes/redeem', [InvitationCodeController::class, 'redeem'])->middleware('auth:api');
-Route::apiResource('invitation-codes', InvitationCodeController::class);
+// Users resource moved to Admin middleware
 
 // =============================
 // ROLE TEST ROUTES
 // =============================
 
 Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
+    Route::apiResource('users', UserController::class);
     Route::post('/notifications/campaign', [NotificationController::class, 'storeCampaign']);
     Route::get('/admin-only', function () {
         return response()->json([

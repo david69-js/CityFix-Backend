@@ -16,8 +16,8 @@ class AdminUserSeeder extends Seeder
     {
         // Ensure Admin role exists first
         $adminRole = Role::firstOrCreate(
-            ['id' => 2], 
-            ['name' => 'Admin', 'description' => 'System Administrator']
+            ['name' => 'Admin'], 
+            ['description' => 'System Administrator']
         );
 
         User::firstOrCreate(

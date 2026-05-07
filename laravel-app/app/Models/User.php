@@ -19,6 +19,7 @@ class User extends Authenticatable implements JWTSubject
         'phone',
         'avatar',
         'role_id',
+        'fcm_token',
     ];
 
     protected $hidden = [
@@ -34,7 +35,6 @@ class User extends Authenticatable implements JWTSubject
     {
         return strtolower($this->role?->name) === strtolower($roleName);
     }
-
     public function getJWTIdentifier()
     {
         return $this->getKey();
@@ -43,5 +43,12 @@ class User extends Authenticatable implements JWTSubject
     public function getJWTCustomClaims()
     {
         return [];
+    }
+    /**
+     * Route notifications for the FCM channel.
+     */
+    public function routeNotificationForFcm()
+    {
+        return $this->fcm_token;
     }
 }

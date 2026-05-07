@@ -10,6 +10,11 @@ class RoleSeeder extends Seeder
     public function run(): void
     {
         Role::firstOrCreate(
+            ['name' => 'Citizen'],
+            ['description' => 'Ciudadano que reporta incidencias']
+        );
+
+        Role::firstOrCreate(
             ['name' => 'Admin'],
             ['description' => 'Administrador del sistema']
         );
