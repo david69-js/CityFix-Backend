@@ -68,6 +68,35 @@ class UserController extends Controller
         $user->delete();
         return response()->json(null, 204);
     }
+    /**
+     * Update the authenticated user's profile.
+     */
+    public function updateProfile(Request $request)
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'first_name' => 'sometimes|string|max:100',
+            'last_name' => 'sometimes|string|max:100',
+            'phone' => 'nullable|string|max:20',
+            'avatar' => 'nullable|image|max:2048',
+        ]);
+
+        if ($request->hasFile('avatar')) {
+            // Optional: Delete old avatar if it exists
+            // if ($user->avatar) {
+            //     \Illuminate\Support\Facades\Storage::disk('public')->delete($user->avatar);
+            // }
+            $validated['avatar'] = $request->file('avatar')->store('avatars', 'public');
+        }
+
+        $user->update($validated);
+
+        return response()->json([
+            'message' => 'Perfil actualizado con éxito',
+            'user' => $user->load('role')
+        ]);
+    }
 
     public function updateFcmToken(Request $request)
     {

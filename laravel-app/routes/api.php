@@ -55,7 +55,7 @@ Route::prefix('auth')->group(function () {
 
     Route::post('/forgot-password', [PasswordResetController::class, 'requestReset']);
     Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
-
+    
     Route::middleware('auth:api')->group(function () {
         Route::get('/me', [AuthController::class, 'me']);
         Route::post('/logout', [AuthController::class, 'logout']);
@@ -121,3 +121,4 @@ Route::middleware(['auth:api', 'role:Worker,Admin'])->group(function () {
 });
 
 Route::get('users', [UserController::class, 'index']);
+Route::post('/user/profile', [UserController::class, 'updateProfile']);
