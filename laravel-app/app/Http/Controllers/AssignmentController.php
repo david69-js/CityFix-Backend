@@ -17,7 +17,7 @@ class AssignmentController extends Controller
         $validated = $request->validate([
             'issue_id'    => 'required|exists:issues,id',
             'worker_id'   => 'required|exists:users,id',
-            'status_id'   => 'required|exists:assignment_statuses,id',
+            'status_id'   => 'required|exists:assignment_status,id',
             'notes'       => 'nullable|string',
             'assigned_at' => 'required|date',
         ]);
@@ -35,7 +35,7 @@ class AssignmentController extends Controller
         $validated = $request->validate([
             'issue_id'    => 'sometimes|exists:issues,id',
             'worker_id'   => 'sometimes|exists:users,id',
-            'status_id'   => 'sometimes|exists:assignment_statuses,id',
+            'status_id'   => 'sometimes|exists:assignment_status,id',
             'notes'       => 'nullable|string',
             'assigned_at' => 'sometimes|date',
         ]);

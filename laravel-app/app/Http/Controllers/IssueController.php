@@ -103,7 +103,7 @@ class IssueController extends Controller
     public function updateStatus(Request $request, Issue $issue)
     {
         $validated = $request->validate([
-            'status_id' => 'required|exists:issue_statuses,id',
+            'status_id' => 'required|exists:issue_status,id',
         ]);
 
         DB::transaction(function () use ($issue, $validated) {
