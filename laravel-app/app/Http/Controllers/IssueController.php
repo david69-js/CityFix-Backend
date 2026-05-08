@@ -7,6 +7,8 @@ use App\Models\IssueImage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
 
 class IssueController extends Controller
 {
@@ -24,7 +26,7 @@ class IssueController extends Controller
             'location' => 'required|string|max:255',
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120', // 5MB max
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:20480', // 20MB max
         ]);
 
         $issue = Issue::create([
@@ -39,8 +41,8 @@ class IssueController extends Controller
         ]);
 
         if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('issues', 'public');
-            
+            $path = $this->storeOptimizedImage($request->file('image'), 'issues');
+
             IssueImage::create([
                 'issue_id' => $issue->id,
                 'image_url' => Storage::disk('public')->url($path)
@@ -48,6 +50,31 @@ class IssueController extends Controller
         }
 
         return response()->json($issue->load('images'), 201);
+    }
+
+    /**
+     * Optimiza y guarda una imagen:
+     * - Redimensiona a máximo 1920px de ancho (manteniendo proporción)
+     * - Convierte a JPEG con calidad 80%
+     * - Resultado típico: < 300KB independientemente del tamaño original
+     */
+    private function storeOptimizedImage($file, string $folder): string
+    {
+        $manager = new ImageManager(new Driver());
+        $image = $manager->read($file->getRealPath());
+
+        // Redimensionar si es más ancho que 1920px
+        if ($image->width() > 1920) {
+            $image->scaleDown(width: 1920);
+        }
+
+        // Codificar como JPEG al 80% de calidad
+        $encoded = $image->toJpeg(quality: 80);
+
+        $filename = $folder . '/' . uniqid('img_', true) . '.jpg';
+        Storage::disk('public')->put($filename, $encoded);
+
+        return $filename;
     }
 
     public function feed(Request $request)

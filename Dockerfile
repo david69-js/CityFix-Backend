@@ -19,6 +19,9 @@ RUN apt-get update && apt-get install -y \
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg
 RUN docker-php-ext-install pdo_mysql pdo_pgsql pgsql mbstring exif pcntl bcmath gd
 
+# Configure PHP upload limits
+RUN echo "upload_max_filesize = 20M\npost_max_size = 22M\nmemory_limit = 256M" > /usr/local/etc/php/conf.d/uploads.ini
+
 # Install Composer
 COPY --from=composer:2.6 /usr/bin/composer /usr/bin/composer
 ENV COMPOSER_ALLOW_SUPERUSER=1
