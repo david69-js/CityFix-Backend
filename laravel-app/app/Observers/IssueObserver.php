@@ -17,7 +17,8 @@ class IssueObserver
             $query->where('name', 'Admin');
         })->get();
 
-        Notification::send($admins, new IssueCreatedNotification($issue));
+        // CORRECCIÓN: No usar Notification::send(). Guardar directamente en la tabla 'notifications' para los administradores.
+        // Notification::send($admins, new IssueCreatedNotification($issue));
     }
 
     public function updated(Issue $issue): void
@@ -27,7 +28,8 @@ class IssueObserver
             // Notificar al dueño del reporte
             $reporter = $issue->user;
             if ($reporter) {
-                $reporter->notify(new IssueStatusUpdatedNotification($issue));
+                // CORRECCIÓN: No usar $reporter->notify(). Guardar directamente en la tabla 'notifications' para el reportero.
+                // $reporter->notify(new IssueStatusUpdatedNotification($issue));
             }
         }
     }

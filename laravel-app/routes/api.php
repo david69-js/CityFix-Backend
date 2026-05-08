@@ -55,7 +55,7 @@ Route::prefix('auth')->group(function () {
 
     Route::post('/forgot-password', [PasswordResetController::class, 'requestReset']);
     Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
-    
+
     Route::middleware('auth:api')->group(function () {
         Route::get('/me', [AuthController::class, 'me']);
         Route::post('/logout', [AuthController::class, 'logout']);
@@ -78,6 +78,8 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/issues/{issue}/history-logs', [IssueHistoryController::class, 'historyLogs']);
     Route::post('/users/fcm-token', [UserController::class, 'updateFcmToken']);
     Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
+
+    //Por acá estaría bien creo
 });
 
 // =============================
@@ -102,6 +104,7 @@ Route::apiResource('upvotes', UpvoteController::class);
 // ROLE TEST ROUTES
 // =============================
 
+// CORRECCIÓN: Se está usando 'auth:sanctum' pero el proyecto utiliza JWT ('auth:api'). Esto causará errores 401 en las rutas de Admin.
 Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
     Route::apiResource('users', UserController::class);
     Route::post('/notifications/campaign', [NotificationController::class, 'storeCampaign']);
@@ -121,4 +124,4 @@ Route::middleware(['auth:api', 'role:Worker,Admin'])->group(function () {
 });
 
 Route::get('users', [UserController::class, 'index']);
-Route::post('/user/profile', [UserController::class, 'updateProfile']);
+Route::post('/user/profile', [UserController::class, 'updateProfile']); //No va aquí va arriba 
