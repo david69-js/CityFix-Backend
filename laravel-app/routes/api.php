@@ -22,6 +22,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UpvoteController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\InvitationCodeController;
+use App\Http\Controllers\GoogleMapsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -52,6 +53,7 @@ Route::post('/seed', function () {
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/google', [AuthController::class, 'loginWithGoogle']);
 
     Route::post('/forgot-password', [PasswordResetController::class, 'requestReset']);
     Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
@@ -78,8 +80,17 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/issues/{issue}/history-logs', [IssueHistoryController::class, 'historyLogs']);
     Route::post('/users/fcm-token', [UserController::class, 'updateFcmToken']);
     Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
+    Route::post('/user/profile', [UserController::class, 'updateProfile']);
+});
 
-    //Por acá estaría bien creo
+// =============================
+// GOOGLE MAPS PROXY ROUTES
+// =============================
+Route::middleware('auth:api')->prefix('maps')->group(function () {
+    Route::get('/geocode', [GoogleMapsController::class, 'geocode']);
+    Route::get('/reverse-geocode', [GoogleMapsController::class, 'reverseGeocode']);
+    Route::get('/places/autocomplete', [GoogleMapsController::class, 'placesAutocomplete']);
+    Route::get('/places/details', [GoogleMapsController::class, 'placeDetails']);
 });
 
 // =============================
@@ -101,13 +112,20 @@ Route::apiResource('upvotes', UpvoteController::class);
 // Users resource moved to Admin middleware
 
 // =============================
-// ROLE TEST ROUTES
+// ADMIN ROUTES
 // =============================
-
-// CORRECCIÓN: Se está usando 'auth:sanctum' pero el proyecto utiliza JWT ('auth:api'). Esto causará errores 401 en las rutas de Admin.
-Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
+Route::middleware(['auth:api', 'role:Admin'])->prefix('admin')->group(function () {
+    // User management
     Route::apiResource('users', UserController::class);
+
+    // Issue management (view all, edit, hide/show)
+    Route::get('/issues', [IssueController::class, 'adminIndex']);
+    Route::put('/issues/{issue}', [IssueController::class, 'adminUpdate']);
+    Route::patch('/issues/{issue}/toggle-hidden', [IssueController::class, 'toggleHidden']);
+
+    // Notification campaigns
     Route::post('/notifications/campaign', [NotificationController::class, 'storeCampaign']);
+
     Route::get('/admin-only', function () {
         return response()->json([
             'message' => 'Solo Admin'
@@ -115,6 +133,9 @@ Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
     });
 });
 
+// =============================
+// ROLE TEST ROUTES
+// =============================
 Route::middleware(['auth:api', 'role:Worker,Admin'])->group(function () {
     Route::get('/worker-or-admin', function () {
         return response()->json([
@@ -124,4 +145,3 @@ Route::middleware(['auth:api', 'role:Worker,Admin'])->group(function () {
 });
 
 Route::get('users', [UserController::class, 'index']);
-Route::post('/user/profile', [UserController::class, 'updateProfile']); //No va aquí va arriba 

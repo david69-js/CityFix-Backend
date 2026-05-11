@@ -14,7 +14,11 @@ class IssueController extends Controller
 {
     public function index()
     {
-        return response()->json(Issue::withCount('comments')->get());
+        return response()->json(
+            Issue::where('is_hidden', false)
+                ->withCount('comments')
+                ->get()
+        );
     }
 
     public function store(Request $request)
@@ -91,6 +95,7 @@ class IssueController extends Controller
                       ->limit(3);
             }
         ])
+            ->where('is_hidden', false)
             ->withCount(['upvotes', 'comments'])
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
@@ -146,5 +151,111 @@ class IssueController extends Controller
         });
 
         return response()->json($issue->load('status', 'history'));
+    }
+
+    // =============================
+    // ADMIN METHODS
+    // =============================
+
+    /**
+     * Admin: List ALL issues (including hidden ones).
+     * GET /api/admin/issues
+     */
+    public function adminIndex(Request $request)
+    {
+        $perPage = $request->query('per_page', 20);
+
+        $query = Issue::with([
+            'user:id,first_name,last_name,avatar',
+            'category',
+            'status',
+            'images',
+        ])->withCount(['upvotes', 'comments']);
+
+        // Optional filter by hidden status
+        if ($request->has('is_hidden')) {
+            $query->where('is_hidden', filter_var($request->query('is_hidden'), FILTER_VALIDATE_BOOLEAN));
+        }
+
+        // Optional filter by status
+        if ($request->has('status_id')) {
+            $query->where('status_id', $request->query('status_id'));
+        }
+
+        // Optional filter by category
+        if ($request->has('category_id')) {
+            $query->where('category_id', $request->query('category_id'));
+        }
+
+        // Optional search
+        if ($request->has('search')) {
+            $search = $request->query('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhere('location', 'like', "%{$search}%");
+            });
+        }
+
+        $issues = $query->orderBy('created_at', 'desc')->paginate($perPage);
+
+        return response()->json($issues);
+    }
+
+    /**
+     * Admin: Update any issue.
+     * PUT /api/admin/issues/{issue}
+     */
+    public function adminUpdate(Request $request, Issue $issue)
+    {
+        $validated = $request->validate([
+            'title'       => 'sometimes|string|max:255',
+            'description' => 'sometimes|string',
+            'category_id' => 'sometimes|exists:categories,id',
+            'location'    => 'sometimes|string|max:255',
+            'latitude'    => 'sometimes|numeric',
+            'longitude'   => 'sometimes|numeric',
+            'status_id'   => 'sometimes|exists:issue_status,id',
+        ]);
+
+        // If status changed, also create history entry
+        if (isset($validated['status_id']) && $validated['status_id'] != $issue->status_id) {
+            $issue->history()->create([
+                'status_id'  => $validated['status_id'],
+                'changed_by' => auth('api')->id(),
+                'changed_at' => now(),
+            ]);
+        }
+
+        $issue->update($validated);
+
+        return response()->json([
+            'message' => 'Issue actualizado correctamente.',
+            'issue'   => $issue->load(['user:id,first_name,last_name,avatar', 'category', 'status', 'images']),
+        ]);
+    }
+
+    /**
+     * Admin: Toggle issue visibility (hide/show).
+     * PATCH /api/admin/issues/{issue}/toggle-hidden
+     */
+    public function toggleHidden(Request $request, Issue $issue)
+    {
+        $request->validate([
+            'reason' => 'nullable|string|max:500',
+        ]);
+
+        $newHiddenState = !$issue->is_hidden;
+
+        $issue->update([
+            'is_hidden'     => $newHiddenState,
+            'hidden_reason' => $newHiddenState ? ($request->reason ?? 'Ocultado por administrador') : null,
+        ]);
+
+        return response()->json([
+            'message'   => $newHiddenState ? 'Issue ocultado del feed público.' : 'Issue visible nuevamente.',
+            'issue'     => $issue->fresh(['category', 'status']),
+            'is_hidden' => $newHiddenState,
+        ]);
     }
 }

@@ -20,11 +20,14 @@ class Issue extends Model implements Auditable
         'latitude',
         'longitude',
         'status_id',
+        'is_hidden',
+        'hidden_reason',
     ];
 
     protected $casts = [
         'latitude' => 'decimal:7',
         'longitude' => 'decimal:7',
+        'is_hidden' => 'boolean',
     ];
 
     public function user(): BelongsTo

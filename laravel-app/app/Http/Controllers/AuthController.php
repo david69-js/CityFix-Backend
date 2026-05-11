@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use App\Models\InvitationCode;
+use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Routing\Controller;
+use Google\Client as Google_Client;
 
 class AuthController extends Controller
 {
@@ -86,6 +88,75 @@ class AuthController extends Controller
             'token_type' => 'bearer',
             'expires_in' => auth('api')->factory()->getTTL() * 60
         ], 201);
+    }
+
+    /**
+     * Login or Register via Google ID Token.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function loginWithGoogle(Request $request)
+    {
+        $request->validate([
+            'id_token' => 'required|string',
+        ]);
+
+        // Verify the Google ID token
+        $client = new Google_Client(['client_id' => config('services.google.client_id')]);
+        $payload = $client->verifyIdToken($request->id_token);
+
+        if (!$payload) {
+            return response()->json(['error' => 'Token de Google inválido'], 401);
+        }
+
+        $googleId = $payload['sub'];
+        $email = $payload['email'] ?? null;
+        $firstName = $payload['given_name'] ?? '';
+        $lastName = $payload['family_name'] ?? '';
+        $avatar = $payload['picture'] ?? null;
+
+        // Find user by google_id or email
+        $user = User::where('google_id', $googleId)->first();
+
+        if (!$user && $email) {
+            $user = User::where('email', $email)->first();
+        }
+
+        if ($user) {
+            // Update google_id if not set (user previously registered with email/password)
+            if (!$user->google_id) {
+                $user->update(['google_id' => $googleId]);
+            }
+            // Update avatar from Google if user doesn't have one
+            if (!$user->avatar && $avatar) {
+                $user->update(['avatar' => $avatar]);
+            }
+        } else {
+            // Create new user with Citizen role
+            $defaultRole = Role::where('name', 'Citizen')->first();
+
+            $user = User::create([
+                'first_name' => $firstName,
+                'last_name'  => $lastName,
+                'email'      => $email,
+                'google_id'  => $googleId,
+                'avatar'     => $avatar,
+                'password'   => null, // No password for Google users
+                'role_id'    => $defaultRole ? $defaultRole->id : 1,
+            ]);
+        }
+
+        // Generate JWT token
+        $token = auth('api')->login($user);
+
+        return response()->json([
+            'message'      => 'Login con Google exitoso.',
+            'user'         => $user->load('role'),
+            'access_token' => $token,
+            'token_type'   => 'bearer',
+            'expires_in'   => auth('api')->factory()->getTTL() * 60,
+            'is_new_user'  => $user->wasRecentlyCreated,
+        ]);
     }
 
     /**

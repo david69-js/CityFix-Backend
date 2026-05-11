@@ -20,10 +20,12 @@ class User extends Authenticatable implements JWTSubject
         'avatar',
         'role_id',
         'fcm_token',
+        'google_id',
     ];
 
     protected $hidden = [
         'password',
+        'google_id',
     ];
 
     public function role(): BelongsTo
