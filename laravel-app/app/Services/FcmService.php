@@ -2,20 +2,19 @@
 
 namespace App\Services;
 
-use Kreait\Firebase\Messaging\CloudMessage;
-use Kreait\Firebase\Messaging\Notification;
-use Kreait\Laravel\Firebase\Facades\Firebase;
-
 class FcmService
 {
     public static function sendPush($token, $title, $body, $data = [])
     {
-        if (!$token) return;
+        if (!$token || !class_exists('Kreait\\Laravel\\Firebase\\Facades\\Firebase')) {
+            return;
+        }
 
-        $messaging = Firebase::messaging();
+        $firebase = \Kreait\Laravel\Firebase\Facades\Firebase::messaging();
+        $messaging = $firebase;
 
-        $message = CloudMessage::withTarget('token', $token)
-            ->withNotification(Notification::create($title, $body))
+        $message = \Kreait\Firebase\Messaging\CloudMessage::withTarget('token', $token)
+            ->withNotification(\Kreait\Firebase\Messaging\Notification::create($title, $body))
             ->withData($data);
 
         try {

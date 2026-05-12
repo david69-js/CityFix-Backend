@@ -58,8 +58,10 @@ class NotificationController extends Controller
 
         $users = User::all();
 
+        $notification = new GeneralNotification($validated['title'], $validated['message']);
+
         foreach ($users as $user) {
-            $user->notify(new GeneralNotification($validated['title'], $validated['message']));
+            $notification->save($user);
         }
 
         return response()->json(['message' => "Campaña enviada a {$users->count()} usuarios."]);

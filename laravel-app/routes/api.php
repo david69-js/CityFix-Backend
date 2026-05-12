@@ -108,6 +108,7 @@ Route::apiResource('issue-statuses', IssueStatusController::class);
 Route::apiResource('notifications', NotificationController::class);
 Route::apiResource('permissions', PermissionController::class);
 Route::apiResource('roles', RoleController::class);
+Route::apiResource('invitation-codes', InvitationCodeController::class);
 Route::apiResource('upvotes', UpvoteController::class);
 // Users resource moved to Admin middleware
 

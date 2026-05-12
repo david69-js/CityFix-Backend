@@ -1,15 +1,20 @@
 # Documentación de Payloads (CityFix Backend)
 
-Esta guía detalla la estructura JSON (payloads) que debes enviar en el cuerpo (body) de las peticiones para crear o actualizar registros. La información listada está basada en las modificaciones recientes de la API para soportar autenticación automatizada, GPS e imágenes de manera optimizada.
+Guía actualizada de los payloads JSON y `multipart/form-data` que debes enviar en las peticiones. Basada en el código real de los controladores (`laravel-app/app/Http/Controllers/` y `routes/api.php`).
 
-Para actualizar registros (ej. `PUT /api/X/{id}`), se usa el mismo formato de JSON, aunque todos los campos suelen ser opcionales para solo actualizar lo que necesites.
+Para actualizar registros (`PUT /api/X/{id}`) se usa el mismo formato, aunque todos los campos suelen ser opcionales.
+
+La API corre en `http://localhost:8888/api` (vía Docker, nginx → php-fpm).
 
 ---
 
-## 🔐 Autenticación e Ingreso
+## Autenticación (JWT)
+
+La API usa JWT (tymon/jwt-auth). El token se obtiene al login/register y se envía como `Authorization: Bearer {token}`.
 
 ### Registro de Usuario
 - **Ruta:** `POST /api/auth/register`
+- **Auth:** No requiere
 - **Payload:**
 ```json
 {
@@ -17,13 +22,15 @@ Para actualizar registros (ej. `PUT /api/X/{id}`), se usa el mismo formato de JS
   "last_name": "Pérez",
   "email": "juan@example.com",
   "password": "password123",
-  "invitation_code": "WORKER-1234" 
+  "invitation_code": "WORKER-1234"
 }
 ```
-*(Nota: El campo `invitation_code` es opcional. Si se proporciona un código válido de "Trabajador", el usuario será registrado automáticamente con ese rol. Si no se envía, el usuario será un "Ciudadano" por defecto).*
+- `invitation_code`: opcional. Si se envía un código válido, el usuario se registra con el rol asociado al código. Si no se envía, se asigna rol "Citizen".
+- `password`: mínimo 6 caracteres.
 
-### Inicio de Sesión (Login)
+### Inicio de Sesión
 - **Ruta:** `POST /api/auth/login`
+- **Auth:** No requiere
 - **Payload:**
 ```json
 {
@@ -31,68 +38,122 @@ Para actualizar registros (ej. `PUT /api/X/{id}`), se usa el mismo formato de JS
   "password": "password123"
 }
 ```
+- **Respuesta:**
+```json
+{
+  "access_token": "eyJ...",
+  "token_type": "bearer",
+  "expires_in": 3600
+}
+```
+
+### Login con Google
+- **Ruta:** `POST /api/auth/google`
+- **Auth:** No requiere
+- **Payload:**
+```json
+{
+  "id_token": "google_id_token_aqui"
+}
+```
+
+### Obtener usuario autenticado
+- **Ruta:** `GET /api/auth/me`
+- **Auth:** `Bearer {token}`
+
+### Cerrar sesión
+- **Ruta:** `POST /api/auth/logout`
+- **Auth:** `Bearer {token}`
 
 ---
 
-## 🔑 Recuperación de Contraseña
-``` Ejemplo
-Link Completo=http://localhost:3000/reset-password?token=7w5gET6FccSiCmZ0pIx2wRACDoHaw9zEDUtuQlr6J7QMkRQZZPwLoenXfyQT2DWw&email=david%40studio31.io
+## Recuperación de Contraseña
 
-token: 7w5gET6FccSiCmZ0pIx2wRACDoHaw9zEDUtuQlr6J7QMkRQZZPwLoenXfyQT2DWw
-
-```
-
-### 1. Solicitar enlace de recuperación
+### 1. Solicitar enlace
 - **Ruta:** `POST /api/auth/forgot-password`
+- **Auth:** No requiere
 - **Payload:**
 ```json
 {
   "email": "juan@example.com"
 }
 ```
-*(Nota: Esto enviará un correo electrónico con un enlace que contiene un token único con validez de 30 minutos).*
+- Envía un correo con un enlace que contiene un `token` único (válido 30 min).
 
-### 2. Restablecer la contraseña (desde el enlace)
+### 2. Restablecer contraseña
 - **Ruta:** `POST /api/auth/reset-password`
+- **Auth:** No requiere
 - **Payload:**
 ```json
 {
   "email": "juan@example.com",
-  "token": "token_recibido_en_el_correo",
+  "token": "token_7w5gET6FccSiCmZ0pIx2w...",
   "password": "nuevaPassword123",
   "password_confirmation": "nuevaPassword123"
 }
 ```
+- `password_confirmation`: **requerido** (usando regla `confirmed`).
 
 ---
 
-## ⚠️ Reportes Ciudadanos (Issues)
+## Reportes (Issues)
 
-### Crear un Reporte Nuevo
-- **Rutas CRUD:** `POST /api/issues`
-- **Tipo de Contenido:** `multipart/form-data` *(Importante: Ya NO es JSON puro porque soporta archivos).*
-- **Payload (Campos del Formulario):**
+### Crear un reporte nuevo
+- **Ruta:** `POST /api/issues`
+- **Auth:** `Bearer {token}`
+- **Content-Type:** `multipart/form-data`
+- **Campos:**
+| Campo | Tipo | Requerido |
+|-------|------|-----------|
+| `category_id` | integer | sí |
+| `title` | string | sí (max 255) |
+| `description` | string | sí |
+| `location` | string | sí (max 255) |
+| `latitude` | numeric | sí |
+| `longitude` | numeric | sí |
+| `image` | file | no (jpeg,png,jpg,gif, max 20MB) |
+
+- `user_id` y `status_id = 1` (Pendiente) se auto-inyectan en el servidor.
+
+### Listar reportes (feed público)
+- **Ruta:** `GET /api/issues/feed`
+- **Auth:** No requiere
+- **Query params:** `?per_page=15`
+- Solo devuelve issues con `is_hidden = false`.
+
+### Ver detalle de un reporte
+- **Ruta:** `GET /api/issues/{id}`
+- **Auth:** No requiere
+
+### Actualizar un reporte
+- **Ruta:** `PUT /api/issues/{id}`
+- **Auth:** `Bearer {token}`
+- **Payload:** campos opcionales
+
+### Eliminar un reporte
+- **Ruta:** `DELETE /api/issues/{id}`
+- **Auth:** `Bearer {token}`
+- Respuesta: `204 No Content`
+
+### Actualizar estado de un reporte (con historial)
+- **Ruta:** `PATCH /api/issues/{id}/status`
+- **Auth:** `Bearer {token}`
+- **Payload:**
 ```json
 {
-  "category_id": 3,
-  "title": "Bache en Avenida Principal",
-  "description": "Hay un bache gigante que daña los coches y provoca accidentes.",
-  "location": "Av. Principal esq. Calle 2",
-  "latitude": 19.432608,
-  "longitude": -99.133209,
-  "image": "File"
+  "status_id": 2
 }
 ```
+- Crea automáticamente un registro en `issue_history`. `changed_by` se toma del token.
 
-*(El `user_id` y el `status_id = 1` se auto-inyectan en el servidor).*
+### Historial de cambios de un reporte
+- **Ruta:** `GET /api/issues/{id}/history-logs`
+- **Auth:** `Bearer {token}`
+- Incluye tiempo transcurrido entre cambios y tiempo total de resolución.
 
-### Obtener el Feed Interactivo
-- **Ruta:** `GET /api/issues/feed`
-- **Query Params (Opcionales):** `?per_page=15`
-- **Retorno:** Devuelve el array paginado listo para consumir en tu app. Incluye a los `images`, el responsable `user`, la `category` y los conteos pre-calculados de `upvotes_count` y `comments_count`.
-
-### Categorías de Reportes
+### Categorías
 - **Ruta:** `POST /api/categories`
+- **Auth:** No requiere
 - **Payload:**
 ```json
 {
@@ -101,36 +162,33 @@ token: 7w5gET6FccSiCmZ0pIx2wRACDoHaw9zEDUtuQlr6J7QMkRQZZPwLoenXfyQT2DWw
   "parent_id": null
 }
 ```
+- `parent_id`: opcional. Para subcategorías.
 
-### Estados de los Reportes (Status)
+### Estados de reportes (Issue Status)
 - **Ruta:** `POST /api/issue-statuses`
-- **Payload:**
-```json
-{
-  "name": "Pendiente",
-  "color": "#FFC107",
-  "sort_order": 1
-}
-```
+- **Auth:** No requiere
+- **Payload:** Sin validaciones definidas (enviar según columnas: `name`, `color`, `sort_order`).
 
 ---
 
-## 💬 Interacción Ciudadana
+## Interacción Ciudadana
 
-### Comentar en un Reporte
-- **Rutas Optimizadas:** `POST /api/issues/{issue_id}/comments`
+### Comentar en un reporte
+- **Ruta:** `POST /api/issues/{issue_id}/comments`
+- **Auth:** `Bearer {token}`
 - **Payload:**
 ```json
 {
-  "issue_id": issue_id,
-  "comment": "Tengo el mismo problema en mi calle de al lado."
+  "comment": "Tengo el mismo problema en mi calle."
 }
 ```
-*(Nota: El `issue_id` es el id del reporte que se quiere comentar.)*
-*(Nota: El `user_id` ya se detecta de forma automática vía Token).*
+- `comment`: requerido, máximo 1000 caracteres.
+- `user_id` se detecta automáticamente del token.
 
-- **Ruta Alternativa (CRUD Base):** `POST /api/comments`
-- **Payload:**
+### CRUD alternativo de comentarios
+- **Rutas:** `GET/POST /api/comments`, `GET/PUT/DELETE /api/comments/{id}`
+- **Auth:** No requiere para lectura
+- **Payload POST:**
 ```json
 {
   "issue_id": 15,
@@ -138,17 +196,23 @@ token: 7w5gET6FccSiCmZ0pIx2wRACDoHaw9zEDUtuQlr6J7QMkRQZZPwLoenXfyQT2DWw
 }
 ```
 
-### Votar / Apoyar un Reporte (Upvotes Toggle)
-- **Ruta principal:** `POST /api/issues/{issue_id}/toggle-upvote`
-- **Payload:** No requiere nada en el Body. Solamente se requiere el Token de autenticación en la cabecera. Si detecta que no habías votado, agregará el voto. Si ya habías votado, lo quitará previniendo el spam.
+### Votar / apoyar un reporte (toggle upvote)
+- **Ruta:** `POST /api/issues/{issue_id}/toggle-upvote`
+- **Auth:** `Bearer {token}`
+- **Body:** No requiere. Si ya votaste, quita el voto; si no, lo agrega.
 
 ---
 
-## 👥 Usuarios y Permisos Administrativos
+## Usuarios y Roles
 
-### Crear un Usuario Directamente (Admin)
-- **Ruta:** `POST /api/users`
-- **Payload:**
+### Listar usuarios (público)
+- **Ruta:** `GET /api/users`
+- **Auth:** No requiere
+
+### CRUD de usuarios (Admin)
+- **Rutas:** `/api/admin/users` (GET, POST), `/api/admin/users/{id}` (GET, PUT, DELETE)
+- **Auth:** `Bearer {token}` + rol Admin
+- **Payload POST:**
 ```json
 {
   "first_name": "Ana",
@@ -156,45 +220,63 @@ token: 7w5gET6FccSiCmZ0pIx2wRACDoHaw9zEDUtuQlr6J7QMkRQZZPwLoenXfyQT2DWw
   "email": "ana@example.com",
   "password": "password123",
   "phone": "+521234567890",
-  "avatar": "url_de_imagen_o_base64",
-  "role_id": 2
+  "role_id": 2,
+  "avatar": "(file image, max 2MB)"
 }
 ```
+- **Payload PUT:** mismos campos, todos opcionales
 
-### Actualizar Usuario (Cambio de Rol / Datos)
-- **Ruta:** `PUT /api/users/{id}`
+### Actualizar perfil propio
+- **Ruta:** `POST /api/user/profile`
+- **Auth:** `Bearer {token}`
+- **Payload:** `first_name`, `last_name`, `phone`, `avatar` (todos opcionales)
+
+### Actualizar FCM Token
+- **Ruta:** `POST /api/users/fcm-token`
+- **Auth:** `Bearer {token}`
 - **Payload:**
 ```json
 {
-  "role_id": 2,
-  "first_name": "Ana Actualizada",
-  "phone": "5551234567"
+  "fcm_token": "token_firebase_aqui"
 }
 ```
-*(Nota: Un administrador puede usar esta ruta para cambiar el rol de un Ciudadano a Trabajador enviando el `role_id` correspondiente).*
 
 ### Roles
 - **Ruta:** `POST /api/roles`
-- **Payload:**
+- **Auth:** No requiere
+- **Payload recomendado:**
 ```json
 {
   "name": "Trabajador",
   "description": "Encargado de arreglar reportes"
 }
 ```
+- Nota: el controlador no tiene validaciones definidas.
 
 ### Permisos
 - **Ruta:** `POST /api/permissions`
-- **Payload:**
+- **Auth:** No requiere
+- **Payload recomendado:**
 ```json
 {
   "name": "edit_issue",
   "description": "Puede modificar reportes"
 }
 ```
+- Nota: el controlador no tiene validaciones definidas.
 
-### Códigos de Invitación (Generación - Admin)
+---
+
+## Códigos de Invitación
+
+CRUD completo en `/api/invitation-codes` (apiResource). Incluye relación `role`.
+
+### Listar códigos
+- **Ruta:** `GET /api/invitation-codes`
+
+### Crear código de invitación
 - **Ruta:** `POST /api/invitation-codes`
+- **Auth:** No requiere
 - **Payload:**
 ```json
 {
@@ -205,14 +287,21 @@ token: 7w5gET6FccSiCmZ0pIx2wRACDoHaw9zEDUtuQlr6J7QMkRQZZPwLoenXfyQT2DWw
   "max_uses": 10
 }
 ```
-*(Nota: El campo `code` es opcional; si no se envía, el sistema generará uno aleatorio de 8 caracteres. El `role_id` determina qué rol obtendrá quien use el código).*
+- `code`: opcional. Si no se envía, se genera uno aleatorio de 8 caracteres.
+- `role_id`: requerido.
+- `is_active`: booleano, opcional.
+
+### Ver/Actualizar/Eliminar código
+- **Rutas:** `GET/PUT/DELETE /api/invitation-codes/{id}`
+- **PUT payload:** `is_active`, `expires_at`, `max_uses` (todos opcionales)
 
 ---
 
-## 👷 Asignaciones y Gestión Interna
+## Asignaciones Internas
 
-### Asignar Tarea a Trabajador
+### Crear asignación
 - **Ruta:** `POST /api/assignments`
+- **Auth:** No requiere
 - **Payload:**
 ```json
 {
@@ -224,98 +313,128 @@ token: 7w5gET6FccSiCmZ0pIx2wRACDoHaw9zEDUtuQlr6J7QMkRQZZPwLoenXfyQT2DWw
 }
 ```
 
-### Estados de la Asignación
-- **Ruta:** `POST /api/assignment-statuses`
-- **Payload:**
-```json
-{
-  "name": "En Camino"
-}
-```
-
-### Historial de Cambios (Logs)
-- **Ruta:** `POST /api/issue-histories`
-- **Payload:**
-```json
-{
-  "issue_id": 15,
-  "status_id": 2,
-  "changed_by": 5,
-  "changed_at": "2026-04-08 10:30:00"
-}
-```
-
-### 📥 Mi Bandeja de Tareas (Trabajador)
+### Mi bandeja de tareas (Trabajador)
 - **Ruta:** `GET /api/my-assignments`
-- **Auth:** Requiere Token (`Bearer`) en el header
-- **Payload:** No requiere body
-- **Retorno de ejemplo:**
-```json
-[
-  {
-    "id": 3,
-    "issue_id": 15,
-    "worker_id": 8,
-    "status_id": 1,
-    "notes": "Llevar material rápido.",
-    "assigned_at": "2026-04-08 09:00:00",
-    "created_at": "2026-04-08T09:00:00.000000Z",
-    "updated_at": "2026-04-08T09:00:00.000000Z",
-    "issue": {
-      "id": 15,
-      "title": "Bache en Avenida Principal",
-      "category": { "id": 3, "name": "Baches" },
-      "status": { "id": 1, "name": "Pendiente", "color": "#FFC107" }
-    },
-    "status": { "id": 1, "name": "Pendiente" }
-  }
-]
-```
-*(Nota: Solo devuelve las asignaciones donde `worker_id` == usuario autenticado, ordenadas de más reciente a más antigua).*
+- **Auth:** `Bearer {token}`
+- Devuelve asignaciones donde `worker_id === usuario autenticado`.
+- Incluye `issue.category`, `issue.status` y `status`.
 
-### 🔄 Actualizar Estado de un Reporte (con Historial)
-- **Ruta:** `PATCH /api/issues/{id}/status`
-- **Auth:** Requiere Token (`Bearer`) en el header
-- **Payload:**
-```json
-{
-  "status_id": 2
-}
-```
-- **Retorno de ejemplo:**
-```json
-{
-  "id": 15,
-  "title": "Bache en Avenida Principal",
-  "status_id": 2,
-  "status": { "id": 2, "name": "En Progreso", "color": "#2196F3" },
-  "history": [
-    {
-      "id": 1,
-      "issue_id": 15,
-      "status_id": 2,
-      "changed_by": 8,
-      "changed_at": "2026-04-17T22:35:00.000000Z"
-    }
-  ]
-}
-```
-*(Nota: En una sola transacción actualiza `status_id` en el reporte e inserta un registro en `issue_history`. El `changed_by` se toma automáticamente del usuario autenticado).*
+### Estados de asignación
+- **Ruta:** `POST /api/assignment-statuses`
+- **Auth:** No requiere
+- Nota: el controlador no tiene validaciones definidas.
 
 ---
 
-## 🔔 Notificaciones
+## Historial de Reportes (Issue History)
 
-### Crear Notificación del Sistema
-- **Ruta:** `POST /api/notifications`
+### Crear registro de historial
+- **Ruta:** `POST /api/issue-histories`
+- **Auth:** No requiere
+- Nota: el controlador no tiene validaciones definidas.
+
+### Ver historial de un reporte (con tiempos)
+- **Ruta:** `GET /api/issues/{issue}/history-logs`
+- **Auth:** `Bearer {token}`
+
+---
+
+## Notificaciones
+
+### Notificaciones del usuario autenticado
+- **Ruta:** `GET /api/notifications`
+- **Auth:** No requiere (pero filtra por `user_id = auth()->id()` si hay sesión)
+
+### Marcar como leída
+- **Ruta:** `PATCH /api/notifications/{id}/read`
+- **Auth:** `Bearer {token}`
+- **Body:** No requiere
+
+### Marcar como leída (CRUD)
+- **Ruta:** `PUT /api/notifications/{id}`
 - **Payload:**
 ```json
 {
-  "user_id": 2,
-  "type": "update",
-  "title": "Reporte en Progreso",
-  "message": "Los trabajadores ya están en camino.",
-  "related_id": 15,
-  "is_read": false
+  "is_read": true
 }
 ```
+
+### Imágenes de reportes (Issue Images)
+- **Ruta:** `GET /api/issue-images` (lista todas)
+- Las imágenes se asocian automáticamente al crear un Issue con `multipart/form-data`.
+
+### Campaña de notificaciones (Admin)
+- **Ruta:** `POST /api/admin/notifications/campaign`
+- **Auth:** `Bearer {token}` + rol Admin
+- **Payload:**
+```json
+{
+  "title": "Mantenimiento Programado",
+  "message": "El sistema estará en mantenimiento esta noche."
+}
+```
+- Envía a TODOS los usuarios del sistema (guarda en DB + push FCM si tienen token).
+
+---
+
+## Google Maps Proxy
+
+Todas requieren `Bearer {token}`.
+
+| Ruta | Params |
+|------|--------|
+| `GET /api/maps/geocode` | `?address=Av+Principal` |
+| `GET /api/maps/reverse-geocode` | `?lat=19.43&lng=-99.13` |
+| `GET /api/maps/places/autocomplete` | `?input=Av+Principal&country=mx` |
+| `GET /api/maps/places/details` | `?place_id=ChIJ...&fields=formatted_address` |
+
+---
+
+## Admin
+
+### Listar todos los issues (incluyendo ocultos)
+- **Ruta:** `GET /api/admin/issues`
+- **Auth:** `Bearer {token}` + rol Admin
+- **Query params:** `?per_page=20&is_hidden=false&status_id=1&category_id=3&search=bache`
+
+### Editar cualquier issue (Admin)
+- **Ruta:** `PUT /api/admin/issues/{id}`
+- **Auth:** `Bearer {token}` + rol Admin
+- **Payload:** `title`, `description`, `category_id`, `location`, `latitude`, `longitude`, `status_id` (todos opcionales)
+
+### Ocultar/Mostrar issue (Admin)
+- **Ruta:** `PATCH /api/admin/issues/{id}/toggle-hidden`
+- **Auth:** `Bearer {token}` + rol Admin
+- **Payload:**
+```json
+{
+  "reason": "Reporte duplicado"
+}
+```
+- `reason`: opcional. Solo aplica al ocultar.
+
+---
+
+## Seed de Base de Datos
+
+- **Ruta:** `POST /api/seed`
+- **Auth:** No requiere
+- Ejecuta `php artisan db:seed` para poblar la base con datos iniciales.
+
+---
+
+## Historial de Cambios (Docs)
+
+| Fecha | Cambio |
+|-------|--------|
+| 2026-05-11 | Revisión general de payloads contra código real de controladores |
+| 2026-05-11 | Corregido `register`: password min 6 (no 8) |
+| 2026-05-11 | Corregido `reset-password`: agregado `password_confirmation` |
+| 2026-05-11 | Corregido `POST /api/issues`: description/location/lat/lng son **requeridos** (no opcionales) |
+| 2026-05-11 | Corregido `image` en issues: es **nullable** (no requerido) |
+| 2026-05-11 | Agregadas rutas Google Maps, Admin CRUD, toggle-hidden, campaigns |
+| 2026-05-11 | Agregada ruta `PATCH /api/notifications/{id}/read` |
+| 2026-05-11 | Agregada ruta `POST /api/user/profile` |
+| 2026-05-11 | Movido CRUD de users a `/api/admin/users` (requiere Admin) |
+| 2026-05-11 | Agregado `apiResource('invitation-codes')` en routes/api.php |
+| 2026-05-11 | Fix: `GeneralNotification` ya no usa `via(['database'])` para evitar crash con columna `data` faltante |

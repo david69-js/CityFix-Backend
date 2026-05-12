@@ -22,12 +22,11 @@ class GeneralNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return [];
     }
 
-    public function toArray(object $notifiable): array
+    public function save(object $notifiable): void
     {
-        // Guardar en la tabla personalizada 'notifications'
         NotificationModel::create([
             'user_id' => $notifiable->id,
             'type' => 'campaign',
@@ -37,14 +36,8 @@ class GeneralNotification extends Notification
             'is_read' => false,
         ]);
 
-        // Intentar enviar Push si tiene token
         if ($notifiable->fcm_token) {
             FcmService::sendPush($notifiable->fcm_token, $this->title, $this->message);
         }
-
-        return [
-            'title' => $this->title,
-            'message' => $this->message,
-        ];
     }
 }

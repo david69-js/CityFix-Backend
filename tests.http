@@ -1,0 +1,695 @@
+# ==============================================================
+# CityFix Backend - Suite de Pruebas HTTP (REST Client)
+# ==============================================================
+#
+# EXTENSIÓN REQUERIDA:
+#   VS Code → "REST Client" (humao.rest-client)
+#
+# FLUJO RECOMENDADO (ejecutar en orden descendente):
+#   1. Seed DB          → Puebla la base
+#   2. Login as Admin   → Guarda {{adminToken}}
+#   3. Login as Worker  → Guarda {{workerToken}}
+#   4. Login as Citizen → Guarda {{citizenToken}}
+#   5. + luego cada grupo de pruebas
+#
+# Las variables {{adminToken}}, {{citizenToken}} y {{workerToken}}
+# se auto-extraen de las respuestas de login.
+#
+# BUGS CORREGIDOS (v2026-05-11):
+#   - GeneralNotification ya no usa via(['database']) → campaña funciona
+#   - Agregado Route::apiResource('invitation-codes') → CRUD completo
+# ==============================================================
+
+@baseUrl = http://localhost:8888/api
+@citizenToken = pendiente
+@workerToken = pendiente
+@adminToken = pendiente
+
+# ==============================================================
+# 0. SEED DB
+# ==============================================================
+
+### [SETUP] Seed database
+# Ejecuta todos los seeders: roles, admin, workers, issues, etc.
+POST {{baseUrl}}/seed
+
+# ==============================================================
+# 1. REGISTRO
+# ==============================================================
+
+### [AUTH] Register Citizen
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "first_name": "Test",
+  "last_name": "Citizen",
+  "email": "testcitizen@example.com",
+  "password": "password123"
+}
+
+### [AUTH] Register Worker (con código de invitación)
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "first_name": "Test",
+  "last_name": "Worker",
+  "email": "testworker@example.com",
+  "password": "password123",
+  "invitation_code": "WORKER2026"
+}
+
+### [AUTH] Register Worker (con código ADMIN2026 - será Admin)
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "first_name": "Test",
+  "last_name": "AdminByCode",
+  "email": "testadmincode@example.com",
+  "password": "password123",
+  "invitation_code": "ADMIN2026"
+}
+
+# ==============================================================
+# 2. LOGIN (guardan tokens automáticamente)
+# ==============================================================
+
+### [AUTH] Login as Admin (seeded)
+# @name loginAdmin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@cityfix.com",
+  "password": "admin123"
+}
+
+### [AUTH] Login as Worker (seeded)
+# @name loginWorker
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "worker1@cityfix.com",
+  "password": "password"
+}
+
+### [AUTH] Login as Citizen
+# @name loginCitizen
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "testcitizen@example.com",
+  "password": "password123"
+}
+
+# ==============================================================
+# VARIABLES DE TOKEN (se auto-asignan tras los login)
+# ==============================================================
+
+@adminToken = {{loginAdmin.response.body.access_token}}
+@workerToken = {{loginWorker.response.body.access_token}}
+@citizenToken = {{loginCitizen.response.body.access_token}}
+
+# ==============================================================
+# 3. SESIÓN
+# ==============================================================
+
+### [AUTH] Get Me (Admin)
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{adminToken}}
+
+### [AUTH] Get Me (Worker)
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{workerToken}}
+
+### [AUTH] Logout (Admin)
+POST {{baseUrl}}/auth/logout
+Authorization: Bearer {{adminToken}}
+
+# Tras logout, el token ya no sirve. Vuelve a hacer login.
+
+# ==============================================================
+# 4. RECUPERACIÓN DE CONTRASEÑA
+# ==============================================================
+
+### [PASSWORD] Forgot Password
+POST {{baseUrl}}/auth/forgot-password
+Content-Type: application/json
+
+{
+  "email": "admin@cityfix.com"
+}
+
+### [PASSWORD] Reset Password
+# Reemplaza TOKEN_REAL con el token del correo/log.
+# Con MAIL_MAILER=log, revisa: storage/logs/laravel.log
+POST {{baseUrl}}/auth/reset-password
+Content-Type: application/json
+
+{
+  "email": "admin@cityfix.com",
+  "token": "TOKEN_REAL_AQUI",
+  "password": "newPassword123",
+  "password_confirmation": "newPassword123"
+}
+
+# ==============================================================
+# 5. CATEGORÍAS
+# ==============================================================
+
+### [CATEGORIES] List
+GET {{baseUrl}}/categories
+
+### [CATEGORIES] Create
+POST {{baseUrl}}/categories
+Content-Type: application/json
+
+{
+  "name": "Accidentes de Tránsito",
+  "icon": "fa-solid fa-car"
+}
+
+### [CATEGORIES] Show (id=1)
+GET {{baseUrl}}/categories/1
+
+### [CATEGORIES] Update (id=1)
+PUT {{baseUrl}}/categories/1
+Content-Type: application/json
+
+{
+  "name": "Baches y Socavones",
+  "icon": "fa-solid fa-road"
+}
+
+### [CATEGORIES] Delete (id=8 - la recién creada)
+DELETE {{baseUrl}}/categories/8
+
+# ==============================================================
+# 6. ISSUE STATUSES
+# ==============================================================
+
+### [STATUSES] List
+GET {{baseUrl}}/issue-statuses
+
+# ==============================================================
+# 7. REPORTES (ISSUES) - Ciudadano
+# ==============================================================
+
+### [ISSUES] Create (con imagen .png)
+# Requiere archivo test-image.png en la raíz del proyecto.
+POST {{baseUrl}}/issues
+Authorization: Bearer {{citizenToken}}
+Content-Type: multipart/form-data; boundary=issue1
+
+--issue1
+Content-Disposition: form-data; name="category_id"
+
+1
+--issue1
+Content-Disposition: form-data; name="title"
+
+Bache en Avenida Reforma
+--issue1
+Content-Disposition: form-data; name="description"
+
+Hay un bache enorme frente al número 234 que daña los coches.
+--issue1
+Content-Disposition: form-data; name="location"
+
+Av. Reforma 234, Col. Juárez, CDMX
+--issue1
+Content-Disposition: form-data; name="latitude"
+
+19.432608
+--issue1
+Content-Disposition: form-data; name="longitude"
+
+-99.133209
+--issue1
+Content-Disposition: form-data; name="image"; filename="test-image.png"
+Content-Type: image/png
+
+< ./test-image.png
+--issue1--
+
+### [ISSUES] Create (sin imagen)
+POST {{baseUrl}}/issues
+Authorization: Bearer {{citizenToken}}
+Content-Type: multipart/form-data; boundary=issue2
+
+--issue2
+Content-Disposition: form-data; name="category_id"
+
+2
+--issue2
+Content-Disposition: form-data; name="title"
+
+Fuga de Agua en Calle Hidalgo
+--issue2
+Content-Disposition: form-data; name="description"
+
+Se está desperdiciando mucha agua desde hace 3 días.
+--issue2
+Content-Disposition: form-data; name="location"
+
+Calle Hidalgo 123, Col. Centro, CDMX
+--issue2
+Content-Disposition: form-data; name="latitude"
+
+19.4260
+--issue2
+Content-Disposition: form-data; name="longitude"
+
+-99.1466
+--issue2--
+
+### [ISSUES] Create (sin imagen - otro más)
+POST {{baseUrl}}/issues
+Authorization: Bearer {{citizenToken}}
+Content-Type: multipart/form-data; boundary=issue3
+
+--issue3
+Content-Disposition: form-data; name="category_id"
+
+3
+--issue3
+Content-Disposition: form-data; name="title"
+
+Poste de luz fundido
+--issue3
+Content-Disposition: form-data; name="description"
+
+El poste de la esquina no alumbra desde hace una semana.
+--issue3
+Content-Disposition: form-data; name="location"
+
+Esquina Insurgentes y Reforma, CDMX
+--issue3
+Content-Disposition: form-data; name="latitude"
+
+19.4333
+--issue3
+Content-Disposition: form-data; name="longitude"
+
+-99.1411
+--issue3--
+
+### [ISSUES] List (público)
+GET {{baseUrl}}/issues
+
+### [ISSUES] Feed (público, paginado)
+GET {{baseUrl}}/issues/feed?per_page=5
+
+### [ISSUES] Show
+GET {{baseUrl}}/issues/26
+
+### [ISSUES] Update
+PUT {{baseUrl}}/issues/26
+Authorization: Bearer {{citizenToken}}
+Content-Type: application/json
+
+{
+  "title": "Bache Reportado - Pendiente de reparación",
+  "description": "Actualización: sigue sin repararse."
+}
+
+### [ISSUES] Delete
+DELETE {{baseUrl}}/issues/28
+Authorization: Bearer {{citizenToken}}
+
+# ==============================================================
+# 8. CAMBIO DE ESTADO + HISTORIAL
+# ==============================================================
+
+### [STATUS] Update status (Pendiente→En proceso)
+# Crea registro en issue_history automáticamente.
+PATCH {{baseUrl}}/issues/26/status
+Authorization: Bearer {{workerToken}}
+Content-Type: application/json
+
+{
+  "status_id": 2
+}
+
+### [STATUS] Update status (En proceso→Resuelto)
+PATCH {{baseUrl}}/issues/26/status
+Authorization: Bearer {{workerToken}}
+Content-Type: application/json
+
+{
+  "status_id": 3
+}
+
+### [HISTORY] View history logs (con duraciones)
+GET {{baseUrl}}/issues/26/history-logs
+Authorization: Bearer {{workerToken}}
+
+# ==============================================================
+# 9. IMÁGENES DE ISSUES
+# ==============================================================
+
+### [IMAGES] List
+GET {{baseUrl}}/issue-images
+
+# ==============================================================
+# 10. COMENTARIOS
+# ==============================================================
+
+### [COMMENTS] Post comment on issue
+POST {{baseUrl}}/issues/26/comments
+Authorization: Bearer {{citizenToken}}
+Content-Type: application/json
+
+{
+  "comment": "Yo también vi ese bache, es muy peligroso."
+}
+
+### [COMMENTS] Get comments on issue
+GET {{baseUrl}}/issues/26/comments
+Authorization: Bearer {{citizenToken}}
+
+### [COMMENTS] List all
+GET {{baseUrl}}/comments
+
+### [COMMENTS] Create (CRUD directo)
+POST {{baseUrl}}/comments
+Content-Type: application/json
+
+{
+  "issue_id": 26,
+  "comment": "Comentario de prueba desde CRUD directo."
+}
+
+### [COMMENTS] Show
+GET {{baseUrl}}/comments/1
+
+### [COMMENTS] Delete (no tiene validaciones)
+DELETE {{baseUrl}}/comments/1
+
+# ==============================================================
+# 11. UPVOTES
+# ==============================================================
+
+### [UPVOTE] Toggle (agrega)
+POST {{baseUrl}}/issues/26/toggle-upvote
+Authorization: Bearer {{citizenToken}}
+
+### [UPVOTE] Toggle (quita - ejecutar de nuevo)
+POST {{baseUrl}}/issues/26/toggle-upvote
+Authorization: Bearer {{citizenToken}}
+
+### [UPVOTE] List all
+GET {{baseUrl}}/upvotes
+
+# ==============================================================
+# 12. CÓDIGOS DE INVITACIÓN
+# ==============================================================
+
+### [INVITE] List
+GET {{baseUrl}}/invitation-codes
+
+### [INVITE] Create
+POST {{baseUrl}}/invitation-codes
+Content-Type: application/json
+
+{
+  "code": "WORKER-2026-NUEVO",
+  "role_id": 3,
+  "is_active": true,
+  "expires_at": "2026-12-31 23:59:59",
+  "max_uses": 50
+}
+
+### [INVITE] Show
+GET {{baseUrl}}/invitation-codes/1
+
+### [INVITE] Update
+PUT {{baseUrl}}/invitation-codes/1
+Content-Type: application/json
+
+{
+  "is_active": false,
+  "max_uses": 5
+}
+
+### [INVITE] Delete
+DELETE {{baseUrl}}/invitation-codes/3
+
+# ==============================================================
+# 13. ASIGNACIONES
+# ==============================================================
+
+### [ASSIGN] List
+GET {{baseUrl}}/assignments
+
+### [ASSIGN] Create
+POST {{baseUrl}}/assignments
+Content-Type: application/json
+
+{
+  "issue_id": 26,
+  "worker_id": 1,
+  "status_id": 1,
+  "notes": "Revisar el bache en Reforma con prioridad.",
+  "assigned_at": "2026-05-11 10:00:00"
+}
+
+### [ASSIGN] My Assignments (Worker)
+GET {{baseUrl}}/my-assignments
+Authorization: Bearer {{workerToken}}
+
+### [ASSIGN] Show
+GET {{baseUrl}}/assignments/1
+
+### [ASSIGN] Update
+PUT {{baseUrl}}/assignments/1
+Content-Type: application/json
+
+{
+  "notes": "Prioridad alta - actualizado",
+  "status_id": 2
+}
+
+### [ASSIGN] Delete
+DELETE {{baseUrl}}/assignments/1
+
+# ==============================================================
+# 14. ASSIGNMENT STATUSES
+# ==============================================================
+
+### [ASSIGN_STATUS] List
+GET {{baseUrl}}/assignment-statuses
+
+# ==============================================================
+# 15. ISSUE HISTORIES (CRUD directo)
+# ==============================================================
+
+### [HISTORY] List all
+GET {{baseUrl}}/issue-histories
+
+# ==============================================================
+# 16. NOTIFICACIONES
+# ==============================================================
+
+### [NOTIF] List (filtra por auth()->id())
+GET {{baseUrl}}/notifications
+
+### [NOTIF] Mark as read (endpoint específico)
+PATCH {{baseUrl}}/notifications/1/read
+Authorization: Bearer {{adminToken}}
+
+### [NOTIF] Mark as read (CRUD update)
+PUT {{baseUrl}}/notifications/1
+Content-Type: application/json
+
+{
+  "is_read": true
+}
+
+# ==============================================================
+# 17. USUARIOS
+# ==============================================================
+
+### [USERS] List public
+GET {{baseUrl}}/users
+
+### [USERS] Update FCM token
+POST {{baseUrl}}/users/fcm-token
+Authorization: Bearer {{citizenToken}}
+Content-Type: application/json
+
+{
+  "fcm_token": "fcm_token_de_prueba_abc123_citizen"
+}
+
+### [USERS] Update profile
+POST {{baseUrl}}/user/profile
+Authorization: Bearer {{citizenToken}}
+Content-Type: application/json
+
+{
+  "first_name": "TestActualizado",
+  "last_name": "CitizenActualizado",
+  "phone": "+525512345678"
+}
+
+# ==============================================================
+# 18. ROLES Y PERMISOS
+# ==============================================================
+
+### [ROLES] List
+GET {{baseUrl}}/roles
+
+### [ROLES] Create
+POST {{baseUrl}}/roles
+Content-Type: application/json
+
+{
+  "name": "Supervisor",
+  "description": "Supervisor de trabajadores"
+}
+
+### [ROLES] Show
+GET {{baseUrl}}/roles/1
+
+### [ROLES] Delete
+DELETE {{baseUrl}}/roles/4
+
+### [PERMS] List
+GET {{baseUrl}}/permissions
+
+### [PERMS] Create
+POST {{baseUrl}}/permissions
+Content-Type: application/json
+
+{
+  "name": "manage_assignments",
+  "description": "Puede gestionar asignaciones"
+}
+
+### [PERMS] Show
+GET {{baseUrl}}/permissions/1
+
+### [PERMS] Delete
+DELETE {{baseUrl}}/permissions/8
+
+# ==============================================================
+# 19. ADMIN
+# ==============================================================
+
+### [ADMIN] Admin-only test
+GET {{baseUrl}}/admin/admin-only
+Authorization: Bearer {{adminToken}}
+
+### [ADMIN] Worker-or-Admin test
+GET {{baseUrl}}/worker-or-admin
+Authorization: Bearer {{adminToken}}
+
+### [ADMIN] Worker-or-Admin test (worker)
+GET {{baseUrl}}/worker-or-admin
+Authorization: Bearer {{workerToken}}
+
+### [ADMIN] List users
+GET {{baseUrl}}/admin/users
+Authorization: Bearer {{adminToken}}
+
+### [ADMIN] Create user
+POST {{baseUrl}}/admin/users
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "first_name": "Nuevo",
+  "last_name": "Usuario",
+  "email": "nuevo@example.com",
+  "password": "password123",
+  "phone": "+525512345678",
+  "role_id": 1
+}
+
+### [ADMIN] Show user
+GET {{baseUrl}}/admin/users/1
+Authorization: Bearer {{adminToken}}
+
+### [ADMIN] Update user (cambiar rol)
+PUT {{baseUrl}}/admin/users/2
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "role_id": 3,
+  "first_name": "Worker",
+  "last_name": "Promovido"
+}
+
+### [ADMIN] Delete user
+DELETE {{baseUrl}}/admin/users/18
+Authorization: Bearer {{adminToken}}
+
+### [ADMIN] List all issues (incluye ocultos)
+GET {{baseUrl}}/admin/issues
+Authorization: Bearer {{adminToken}}
+
+### [ADMIN] List issues con filtros
+GET {{baseUrl}}/admin/issues?per_page=5&is_hidden=false&status_id=2
+Authorization: Bearer {{adminToken}}
+
+### [ADMIN] Update any issue
+PUT {{baseUrl}}/admin/issues/26
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "title": "Issue actualizado por Admin",
+  "status_id": 3
+}
+
+### [ADMIN] Toggle hidden (ocultar)
+PATCH {{baseUrl}}/admin/issues/26/toggle-hidden
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "reason": "Reporte duplicado - el mismo bache fue reportado 3 veces"
+}
+
+### [ADMIN] Toggle hidden (mostrar de nuevo)
+PATCH {{baseUrl}}/admin/issues/26/toggle-hidden
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{}
+
+### [ADMIN] Send notification campaign
+POST {{baseUrl}}/admin/notifications/campaign
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "title": "Mantenimiento Programado",
+  "message": "El sistema estará en mantenimiento el sábado de 2am a 4am."
+}
+
+# ==============================================================
+# 20. GOOGLE MAPS PROXY
+# ==============================================================
+
+### [MAPS] Geocode
+GET {{baseUrl}}/maps/geocode?address=Av%20Reforma%20234%20CDMX
+Authorization: Bearer {{citizenToken}}
+
+### [MAPS] Reverse geocode
+GET {{baseUrl}}/maps/reverse-geocode?lat=19.432608&lng=-99.133209
+Authorization: Bearer {{citizenToken}}
+
+### [MAPS] Places autocomplete
+GET {{baseUrl}}/maps/places/autocomplete?input=Av%20Reforma&country=mx
+Authorization: Bearer {{citizenToken}}
+
+### [MAPS] Place details
+GET {{baseUrl}}/maps/places/details?place_id=ChIJFQYj0JcQzoUR1KQKqFNy0FU
+Authorization: Bearer {{citizenToken}}
