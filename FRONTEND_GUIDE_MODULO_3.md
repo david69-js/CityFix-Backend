@@ -128,7 +128,25 @@ Tabla: `assignment_status`
 
 ---
 
-## 4. Historial de Cambios (History Logs)
+## 4. Comentarios en Reportes
+
+- **URL:** `POST /api/issues/{issue_id}/comments`
+- **Auth:** Bearer Token
+- **Cuerpo:**
+```json
+{
+  "issue_id": 28,
+  "comment": "Ya revisé el reporte, voy en camino."
+}
+```
+> [!NOTE]
+> Aunque la ruta ya contiene el `issue_id`, por ahora debe incluirse también en el body debido a la validación `required_without:issue`. Es un bug conocido en la validación del controlador.
+
+- **Listar comentarios:** `GET /api/issues/{issue_id}/comments`
+
+---
+
+## 5. Historial de Cambios (History Logs)
 
 - **URL:** `GET /api/issues/{issue_id}/history-logs`
 - **Auth:** Bearer Token
@@ -136,7 +154,7 @@ Tabla: `assignment_status`
 
 ---
 
-## 5. Flujo Sugerido
+## 6. Flujo Sugerido
 
 1. **Login** → `POST /api/auth/login` → obtén el JWT.
 2. **Dashboard** → `GET /api/my-assignments` → lista de tareas.
@@ -146,7 +164,7 @@ Tabla: `assignment_status`
 
 ---
 
-## 6. Headers Requeridos
+## 7. Headers Requeridos
 
 ```
 Accept: application/json
@@ -156,7 +174,7 @@ Authorization: Bearer {token_jwt}
 
 ---
 
-## Historial de Cambios (Docs)
+## 8. Historial de Cambios (Docs)
 
 | Fecha | Cambio |
 |-------|--------|
