@@ -11,7 +11,7 @@ class NotificationController extends Controller
 {
     public function index()
     {
-        return response()->json(Notification::where('user_id', auth()->id())->orderBy('created_at', 'desc')->get());
+        return response()->json(Notification::where('user_id', auth('api')->id())->orderBy('created_at', 'desc')->get());
     }
 
     public function store(Request $request)
