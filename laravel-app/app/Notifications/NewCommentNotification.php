@@ -21,9 +21,9 @@ class NewCommentNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database'];
-        //No tiene la columnda 'date' 
-        //De momento se guarda manualmente como ToArray().
+        $this->toArray($notifiable);
+
+        return [];
     }
 
     public function toArray(object $notifiable): array

@@ -27,9 +27,8 @@ class CommentObserver
         $userIdsToNotify = array_unique($commenterIds);
 
         if (!empty($userIdsToNotify)) {
-            // CORRECCIÓN: Aquí no se debe usar Notification::send(). Se debe guardar directamente en la tabla 'notifications' personalizada.
-            // $users = User::whereIn('id', $userIdsToNotify)->get();
-            // Notification::send($users, new NewCommentNotification($comment));
+            $users = User::whereIn('id', $userIdsToNotify)->get();
+            Notification::send($users, new NewCommentNotification($comment));
         }
     }
 

@@ -21,7 +21,9 @@ class IssueCreatedNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database'];
+        $this->toArray($notifiable);
+
+        return [];
     }
 
     public function toArray(object $notifiable): array
