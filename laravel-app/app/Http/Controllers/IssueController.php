@@ -105,7 +105,7 @@ class IssueController extends Controller
 
     public function show(Issue $issue)
     {
-        return response()->json($issue->load([
+        return response()->json($issue->loadCount('comments')->load([
             'user:id,first_name,last_name,avatar',
             'category',
             'status',

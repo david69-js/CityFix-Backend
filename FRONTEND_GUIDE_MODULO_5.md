@@ -1,5 +1,7 @@
 # Guía de Integración Frontend - Módulo 5: Auditoría, Historial y Datos de Prueba
 
+Verificada contra backend en `http://localhost:8888/api` (2026-05-11).
+
 Este módulo introduce el sistema de seguimiento de cambios (Auditoría), un visor de historial avanzado con cálculos de tiempo y una base de datos poblada para pruebas masivas.
 
 ---
@@ -69,6 +71,17 @@ Para facilitar el desarrollo, se pueden generar datos masivos de prueba. El back
 
 > [!NOTE]
 > Puedes pedirle al equipo de backend que reinicie la base de datos con `php artisan migrate:fresh --seed` para ver estos cambios.
+>
+> **Actual:** 32 usuarios, 57 issues (la guía dice 15/25 — el seed real produce más).
+
+---
+
+## Historial de Cambios (Docs)
+
+| Fecha | Cambio |
+|-------|--------|
+| 2026-05-11 | Fix: `comments_count` faltaba en `show()` — añadido `loadCount('comments')` en `IssueController@show` |
+| 2026-05-11 | Seed actual: 32 users, 57 issues, 1x1 test PNG (no 15/25 como dice la guía original) |
 
 ---
 
