@@ -46,7 +46,9 @@ Se ha optimizado la forma de obtener comentarios para que sea más específica y
 ### Obtener comentarios de un reporte
 - **URL:** `/api/issues/{issue_id}/comments`
 - **Método:** `GET`
+- **Auth:** Bearer Token
 - **Cambio:** Ahora devuelve los comentarios filtrados por reporte e incluye el objeto `user` con: `id`, `first_name`, `last_name`, `email` y `avatar`.
+- **Sin auth:** 401 Unauthenticated
 
 ### Contador de comentarios
 - Al consultar reportes (`/api/issues` o `/api/issues/{id}`), ahora se incluye automáticamente el campo `comments_count`. Puedes usarlo para mostrar el ícono de "Globo de texto" con el número en los listados.
@@ -65,14 +67,13 @@ Las categorías base ahora tienen un slug de icono (basado en FontAwesome o simi
 ## 4. Datos de Prueba (Seeders)
 
 Para facilitar el desarrollo, se pueden generar datos masivos de prueba. El backend ahora cuenta con:
-- **Usuarios**: 10 ciudadanos y 5 trabajadores.
-- **Reportes**: 25 incidentes con GPS (zona CDMX), fotos reales de Unsplash y votos aleatorios.
+- **Usuarios**: 10 ciudadanos, 5 trabajadores + admins (32 total).
+- **Reportes**: 57 incidentes con GPS (zona CDMX), fotos reales de Unsplash y votos aleatorios.
 - **Comentarios**: Feed social lleno con 2-8 comentarios por reporte.
+- **Categorías**: 11 categorías, 8 con icono no nulo. Las 3 subcategorías heredan sin icono propio.
 
 > [!NOTE]
 > Puedes pedirle al equipo de backend que reinicie la base de datos con `php artisan migrate:fresh --seed` para ver estos cambios.
->
-> **Actual:** 32 usuarios, 57 issues (la guía dice 15/25 — el seed real produce más).
 
 ---
 
@@ -81,7 +82,9 @@ Para facilitar el desarrollo, se pueden generar datos masivos de prueba. El back
 | Fecha | Cambio |
 |-------|--------|
 | 2026-05-11 | Fix: `comments_count` faltaba en `show()` — añadido `loadCount('comments')` en `IssueController@show` |
-| 2026-05-11 | Seed actual: 32 users, 57 issues, 1x1 test PNG (no 15/25 como dice la guía original) |
+| 2026-05-11 | Seed actual: 57 issues, 32 users, 1x1 test PNG (ajuste de cifras) |
+| 2026-05-11 | Añadido auth requerido (Bearer) en endpoint comments |
+| 2026-05-11 | Añadida nota: 3 subcategorías tienen icono null (heredan de padre) |
 
 ---
 
