@@ -27,7 +27,7 @@ class AdminUserSeeder extends Seeder
                 'last_name' => 'Admin',
                 'password' => Hash::make('admin123'), // Default password
                 'phone' => '1234567890',
-                'role_id' => $adminRole->id,
+                'role_id' =>  1,
             ]
         );
     }
