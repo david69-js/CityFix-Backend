@@ -15,7 +15,8 @@ class AssignmentStatusController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            // Add your validation rules
+            'name'        => 'required|string|max:50|unique:assignment_status,name',
+            'description' => 'nullable|string|max:255',
         ]);
         $assignmentStatus = AssignmentStatus::create($validated);
         return response()->json($assignmentStatus, 201);
@@ -29,7 +30,8 @@ class AssignmentStatusController extends Controller
     public function update(Request $request, AssignmentStatus $assignmentStatus)
     {
         $validated = $request->validate([
-            // Add your validation rules
+            'name'        => 'sometimes|string|max:50|unique:assignment_status,name,' . $assignmentStatus->id,
+            'description' => 'nullable|string|max:255',
         ]);
         $assignmentStatus->update($validated);
         return response()->json($assignmentStatus);

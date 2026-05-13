@@ -16,7 +16,8 @@ class UpvoteController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            // Add your validation rules
+            'issue_id' => 'required|exists:issues,id',
+            'user_id'  => 'required|exists:users,id',
         ]);
         $upvote = Upvote::create($validated);
         return response()->json($upvote, 201);
@@ -30,7 +31,8 @@ class UpvoteController extends Controller
     public function update(Request $request, Upvote $upvote)
     {
         $validated = $request->validate([
-            // Add your validation rules
+            'issue_id' => 'sometimes|exists:issues,id',
+            'user_id'  => 'sometimes|exists:users,id',
         ]);
         $upvote->update($validated);
         return response()->json($upvote);

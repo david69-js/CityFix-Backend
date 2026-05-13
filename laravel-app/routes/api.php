@@ -131,23 +131,32 @@ Route::middleware('auth:api')->prefix('maps')->group(function () {
 });
 
 // =============================
-// API RESOURCES
+// PÚBLICO: Verificar código de invitación
 // =============================
+Route::post('/invitation-codes/verify', [InvitationCodeController::class, 'verify']);
 
-Route::apiResource('assignments', AssignmentController::class);
-Route::apiResource('assignment-statuses', AssignmentStatusController::class);
-Route::apiResource('categories', CategoryController::class);
-Route::apiResource('comments', CommentController::class);
-Route::apiResource('issues', IssueController::class);
-Route::apiResource('issue-histories', IssueHistoryController::class);
-Route::apiResource('issue-images', IssueImageController::class);
-Route::apiResource('issue-statuses', IssueStatusController::class);
-Route::apiResource('notifications', NotificationController::class);
-Route::apiResource('permissions', PermissionController::class);
-Route::apiResource('roles', RoleController::class);
-Route::apiResource('invitation-codes', InvitationCodeController::class);
-Route::apiResource('upvotes', UpvoteController::class);
-// Users resource moved to Admin middleware
+// =============================
+// API RESOURCES — Solo lectura (públicos)
+// =============================
+Route::apiResource('issues', IssueController::class)->only(['index', 'show']);
+Route::apiResource('categories', CategoryController::class)->only(['index', 'show']);
+Route::apiResource('issue-statuses', IssueStatusController::class)->only(['index', 'show']);
+Route::apiResource('assignment-statuses', AssignmentStatusController::class)->only(['index', 'show']);
+Route::apiResource('roles', RoleController::class)->only(['index', 'show']);
+
+// =============================
+// API RESOURCES — Protegidos (requieren autenticación)
+// =============================
+Route::middleware('auth:api')->group(function () {
+    Route::apiResource('issues', IssueController::class)->only(['store', 'update', 'destroy']);
+    Route::apiResource('comments', CommentController::class)->only(['store', 'update', 'destroy']);
+    Route::apiResource('upvotes', UpvoteController::class)->only(['store', 'destroy']);
+    Route::apiResource('notifications', NotificationController::class)->only(['index', 'show', 'update']);
+    Route::apiResource('assignments', AssignmentController::class);
+    Route::apiResource('issue-histories', IssueHistoryController::class);
+    Route::apiResource('issue-images', IssueImageController::class);
+    Route::apiResource('invitation-codes', InvitationCodeController::class);
+});
 
 // =============================
 // ADMIN ROUTES
@@ -155,6 +164,7 @@ Route::apiResource('upvotes', UpvoteController::class);
 Route::middleware(['auth:api', 'role:Admin'])->prefix('admin')->group(function () {
     // User management
     Route::apiResource('users', UserController::class);
+    Route::patch('users/{user}/toggle-active', [UserController::class, 'toggleActive']);
 
     // Issue management (view all, edit, hide/show)
     Route::get('/issues', [IssueController::class, 'adminIndex']);
@@ -181,5 +191,3 @@ Route::middleware(['auth:api', 'role:Worker,Admin'])->group(function () {
         ]);
     });
 });
-
-Route::get('users', [UserController::class, 'index']);

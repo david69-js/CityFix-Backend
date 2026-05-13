@@ -15,7 +15,8 @@ class IssueStatusController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            // Add your validation rules
+            'name'        => 'required|string|max:50|unique:issue_status,name',
+            'description' => 'nullable|string|max:255',
         ]);
         $issueStatus = IssueStatus::create($validated);
         return response()->json($issueStatus, 201);
@@ -29,7 +30,8 @@ class IssueStatusController extends Controller
     public function update(Request $request, IssueStatus $issueStatus)
     {
         $validated = $request->validate([
-            // Add your validation rules
+            'name'        => 'sometimes|string|max:50|unique:issue_status,name,' . $issueStatus->id,
+            'description' => 'nullable|string|max:255',
         ]);
         $issueStatus->update($validated);
         return response()->json($issueStatus);

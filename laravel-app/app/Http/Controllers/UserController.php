@@ -110,4 +110,27 @@ class UserController extends Controller
 
         return response()->json(['message' => 'FCM token updated successfully']);
     }
+
+    /**
+     * Toggle user active/archived status.
+     * PATCH /api/admin/users/{user}/toggle-active
+     */
+    public function toggleActive(Request $request, User $user)
+    {
+        // Prevenir desactivar a otro administrador
+        if ($user->hasRole('Admin') && $user->id !== auth('api')->id()) {
+            return response()->json([
+                'message' => 'No puedes desactivar a otro administrador.'
+            ], 403);
+        }
+
+        $newState = !$user->is_active;
+        $user->update(['is_active' => $newState]);
+
+        return response()->json([
+            'message' => $newState ? 'Usuario activado correctamente.' : 'Usuario archivado correctamente.',
+            'user'    => $user->load('role'),
+            'is_active' => $newState,
+        ]);
+    }
 }

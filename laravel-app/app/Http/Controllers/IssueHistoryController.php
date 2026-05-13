@@ -17,7 +17,10 @@ class IssueHistoryController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            // Add your validation rules
+            'issue_id'   => 'required|exists:issues,id',
+            'status_id'  => 'required|exists:issue_status,id',
+            'changed_by' => 'required|exists:users,id',
+            'changed_at' => 'required|date',
         ]);
         $issueHistory = IssueHistory::create($validated);
         return response()->json($issueHistory, 201);
@@ -31,7 +34,9 @@ class IssueHistoryController extends Controller
     public function update(Request $request, IssueHistory $issueHistory)
     {
         $validated = $request->validate([
-            // Add your validation rules
+            'status_id'  => 'sometimes|exists:issue_status,id',
+            'changed_by' => 'sometimes|exists:users,id',
+            'changed_at' => 'sometimes|date',
         ]);
         $issueHistory->update($validated);
         return response()->json($issueHistory);

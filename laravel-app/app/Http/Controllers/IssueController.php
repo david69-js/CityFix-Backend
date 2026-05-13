@@ -84,10 +84,11 @@ class IssueController extends Controller
     public function feed(Request $request)
     {
         $perPage = $request->query('per_page', 15);
-        $issues = Issue::with([
-            'user:id,first_name,last_name,avatar', 
-            'category', 
-            'status', 
+
+        $query = Issue::with([
+            'user:id,first_name,last_name,avatar',
+            'category',
+            'status',
             'images',
             'comments' => function($query) {
                 $query->with('user:id,first_name,last_name,avatar')
@@ -95,10 +96,38 @@ class IssueController extends Controller
                       ->limit(3);
             }
         ])
-            ->where('is_hidden', false)
-            ->withCount(['upvotes', 'comments'])
-            ->orderBy('created_at', 'desc')
-            ->paginate($perPage);
+        ->where('is_hidden', false)
+        ->whereHas('user', function ($q) {
+            $q->where('is_active', true);
+        })
+        ->withCount(['upvotes', 'comments']);
+
+        // Filtro por búsqueda de texto (título, descripción, ubicación)
+        if ($request->has('search')) {
+            $search = $request->query('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhere('location', 'like', "%{$search}%");
+            });
+        }
+
+        // Filtro por usuario
+        if ($request->has('user_id')) {
+            $query->where('user_id', $request->query('user_id'));
+        }
+
+        // Filtro por estado
+        if ($request->has('status_id')) {
+            $query->where('status_id', $request->query('status_id'));
+        }
+
+        // Filtro por categoría
+        if ($request->has('category_id')) {
+            $query->where('category_id', $request->query('category_id'));
+        }
+
+        $issues = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
         return response()->json($issues);
     }
@@ -120,7 +149,13 @@ class IssueController extends Controller
     public function update(Request $request, Issue $issue)
     {
         $validated = $request->validate([
-            // Add your validation rules
+            'title'       => 'sometimes|string|max:255',
+            'description' => 'sometimes|string',
+            'category_id' => 'sometimes|exists:categories,id',
+            'location'    => 'sometimes|string|max:255',
+            'latitude'    => 'sometimes|numeric',
+            'longitude'   => 'sometimes|numeric',
+            'status_id'   => 'sometimes|exists:issue_status,id',
         ]);
         $issue->update($validated);
         return response()->json($issue);
@@ -185,6 +220,11 @@ class IssueController extends Controller
         // Optional filter by category
         if ($request->has('category_id')) {
             $query->where('category_id', $request->query('category_id'));
+        }
+
+        // Optional filter by user_id
+        if ($request->has('user_id')) {
+            $query->where('user_id', $request->query('user_id'));
         }
 
         // Optional search

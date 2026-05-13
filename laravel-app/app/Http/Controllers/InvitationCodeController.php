@@ -114,4 +114,44 @@ class InvitationCodeController extends Controller
             'message' => 'Invitation code deleted successfully'
         ]);
     }
+
+    /**
+     * Verify an invitation code.
+     * POST /api/invitation-codes/verify
+     */
+    public function verify(Request $request)
+    {
+        $validated = $request->validate([
+            'code' => 'required|string|max:20',
+        ]);
+
+        $code = InvitationCode::where('code', $validated['code'])
+            ->where('is_active', true)
+            ->where(function ($q) {
+                $q->whereNull('expires_at')
+                  ->orWhere('expires_at', '>', now());
+            })
+            ->first();
+
+        if (!$code) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'Código de invitación inválido o expirado.'
+            ], 422);
+        }
+
+        if ($code->max_uses && $code->used_count >= $code->max_uses) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'Este código de invitación ha alcanzado su límite de usos.'
+            ], 422);
+        }
+
+        return response()->json([
+            'valid'   => true,
+            'message' => 'Código válido.',
+            'role_id' => $code->role_id,
+            'role'    => $code->role->name ?? null,
+        ]);
+    }
 }

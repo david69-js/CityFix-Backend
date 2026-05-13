@@ -15,7 +15,8 @@ class PermissionController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            // Add your validation rules
+            'name'        => 'required|string|max:50|unique:permissions,name',
+            'description' => 'nullable|string|max:255',
         ]);
         $permission = Permission::create($validated);
         return response()->json($permission, 201);
@@ -29,7 +30,8 @@ class PermissionController extends Controller
     public function update(Request $request, Permission $permission)
     {
         $validated = $request->validate([
-            // Add your validation rules
+            'name'        => 'sometimes|string|max:50|unique:permissions,name,' . $permission->id,
+            'description' => 'nullable|string|max:255',
         ]);
         $permission->update($validated);
         return response()->json($permission);

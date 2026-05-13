@@ -44,7 +44,7 @@ class CommentController extends Controller
     public function update(Request $request, Comment $comment)
     {
         $validated = $request->validate([
-            // Add your validation rules
+            'comment' => 'required|string|max:1000',
         ]);
         $comment->update($validated);
         return response()->json($comment);

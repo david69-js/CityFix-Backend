@@ -15,7 +15,8 @@ class IssueImageController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            // Add your validation rules
+            'issue_id'  => 'required|exists:issues,id',
+            'image_url' => 'required|string|max:500',
         ]);
         $issueImage = IssueImage::create($validated);
         return response()->json($issueImage, 201);
@@ -29,7 +30,7 @@ class IssueImageController extends Controller
     public function update(Request $request, IssueImage $issueImage)
     {
         $validated = $request->validate([
-            // Add your validation rules
+            'image_url' => 'sometimes|string|max:500',
         ]);
         $issueImage->update($validated);
         return response()->json($issueImage);

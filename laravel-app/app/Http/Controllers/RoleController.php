@@ -15,7 +15,8 @@ class RoleController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            // Add your validation rules
+            'name'        => 'required|string|max:50|unique:roles,name',
+            'description' => 'nullable|string|max:255',
         ]);
         $role = Role::create($validated);
         return response()->json($role, 201);
@@ -29,7 +30,8 @@ class RoleController extends Controller
     public function update(Request $request, Role $role)
     {
         $validated = $request->validate([
-            // Add your validation rules
+            'name'        => 'sometimes|string|max:50|unique:roles,name,' . $role->id,
+            'description' => 'nullable|string|max:255',
         ]);
         $role->update($validated);
         return response()->json($role);
