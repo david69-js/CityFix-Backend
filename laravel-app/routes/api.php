@@ -31,18 +31,55 @@ use App\Http\Controllers\GoogleMapsController;
 */
 // routes/api.php
 Route::post('/seed', function () {
+    // Extend PHP execution time to accommodate the ~9s seeding operation
+    set_time_limit(60);
+
+    // Prevent proxies and load balancers from closing the connection early
+    header('Connection: keep-alive');
+
     try {
+        \Illuminate\Support\Facades\Log::info('[Seed] Starting db:seed via HTTP request');
+
         \Illuminate\Support\Facades\Artisan::call('db:seed', ['--force' => true]);
         $output = \Illuminate\Support\Facades\Artisan::output();
+
+        \Illuminate\Support\Facades\Log::info('[Seed] Completed successfully', ['output' => $output]);
+
+        // Write output to a dedicated log file for easier debugging
+        \Illuminate\Support\Facades\Storage::disk('local')->put(
+            'logs/seed-output.log',
+            '[' . now()->toDateTimeString() . '] SUCCESS' . PHP_EOL . $output
+        );
+
         return response()->json([
             'message' => 'Seeders executed',
             'output' => $output
         ]);
     } catch (\Throwable $e) {
+        $errorDetails = [
+            'message' => $e->getMessage(),
+            'file'    => $e->getFile(),
+            'line'    => $e->getLine(),
+            'trace'   => $e->getTraceAsString(),
+        ];
+
+        \Illuminate\Support\Facades\Log::error('[Seed] Seeder failed', $errorDetails);
+
+        // Write failure details to the same dedicated log file
+        \Illuminate\Support\Facades\Storage::disk('local')->put(
+            'logs/seed-output.log',
+            '[' . now()->toDateTimeString() . '] FAILED' . PHP_EOL
+                . 'Error: ' . $e->getMessage() . PHP_EOL
+                . 'File: ' . $e->getFile() . ':' . $e->getLine() . PHP_EOL
+                . $e->getTraceAsString()
+        );
+
         return response()->json([
             'message' => 'Seeder failed',
-            'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString()
+            'error'   => $e->getMessage(),
+            'file'    => $e->getFile(),
+            'line'    => $e->getLine(),
+            'trace'   => $e->getTraceAsString(),
         ], 500);
     }
 });
