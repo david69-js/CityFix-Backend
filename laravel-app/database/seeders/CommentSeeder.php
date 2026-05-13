@@ -6,13 +6,26 @@ use App\Models\Comment;
 use App\Models\Issue;
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Faker\Factory as Faker;
 
 class CommentSeeder extends Seeder
 {
+    private array $comments = [
+        'Ya reporté esto hace semanas y no hay respuesta.',
+        'Apoyo la solicitud, es urgente que lo atiendan.',
+        'Este problema afecta a toda la colonia.',
+        'Gracias por levantar el reporte, vecino.',
+        'Ojalá las autoridades hagan algo pronto.',
+        '¿Alguien sabe a qué dependencia le toca resolver esto?',
+        'Comparto el reporte, es exactamente lo que está pasando.',
+        'Esperemos que con la presión ciudadana se resuelva.',
+        'Ya van varias veces que pasa esto, es indignante.',
+        'Hay que organizarnos para exigir una solución.',
+        'Si todos reportamos, tal vez nos hagan caso.',
+        'La situación es insostenible, necesitamos apoyo.',
+    ];
+
     public function run(): void
     {
-        $faker = Faker::create('es_ES');
         $users = User::all();
         $issues = Issue::all();
 
@@ -22,15 +35,16 @@ class CommentSeeder extends Seeder
         }
 
         foreach ($issues as $issue) {
-            // Entre 2 y 8 comentarios por reporte
             $numComments = rand(2, 8);
-            
+
             for ($i = 0; $i < $numComments; $i++) {
+                $createdAt = $issue->created_at->copy()->addDays(rand(0, now()->diffInDays($issue->created_at)))->addHours(rand(0, 23));
+
                 Comment::create([
                     'issue_id' => $issue->id,
                     'user_id' => $users->random()->id,
-                    'comment' => $faker->sentence(rand(6, 15)),
-                    'created_at' => $faker->dateTimeBetween($issue->created_at, 'now'),
+                    'comment' => $this->comments[array_rand($this->comments)],
+                    'created_at' => $createdAt,
                 ]);
             }
         }
