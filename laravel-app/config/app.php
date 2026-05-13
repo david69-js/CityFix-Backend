@@ -39,7 +39,10 @@ return [
     |
     */
 
-    'debug' => (bool) env('APP_DEBUG', false),
+    // Set to true temporarily to expose full error details in API responses
+    // while diagnosing production 500 errors. Flip back to false (or control
+    // via the APP_DEBUG env var) once the root causes are identified.
+    'debug' => (bool) env('APP_DEBUG', true),
 
     /*
     |--------------------------------------------------------------------------

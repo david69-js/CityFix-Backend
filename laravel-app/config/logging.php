@@ -54,7 +54,9 @@ return [
 
         'stack' => [
             'driver' => 'stack',
-            'channels' => explode(',', (string) env('LOG_STACK', 'single')),
+            // Default to both 'single' (file) and 'stderr' so logs are always
+            // visible in Railway's log stream regardless of storage permissions.
+            'channels' => explode(',', (string) env('LOG_STACK', 'single,stderr')),
             'ignore_exceptions' => false,
         ],
 
