@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             NotificationSeeder::class,
             IssueStatusSeeder::class,
+            AssignmentStatusSeeder::class,
             InvitationCodeSeeder::class,
             CategorySeeder::class,
             IssueSeeder::class,
