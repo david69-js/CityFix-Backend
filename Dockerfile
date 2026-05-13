@@ -48,7 +48,7 @@ WORKDIR /var/www/cityfix
 COPY laravel-app/ .
 
 # Install composer dependencies
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+RUN composer update --no-dev --optimize-autoloader --no-interaction
 
 # Create necessary directories and set proper permissions
 RUN mkdir -p storage/framework/{sessions,views,cache} \
