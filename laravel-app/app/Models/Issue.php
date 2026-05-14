@@ -64,4 +64,9 @@ class Issue extends Model implements Auditable
     {
         return $this->hasMany(IssueHistory::class);
     }
+
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(Assignment::class);
+    }
 }

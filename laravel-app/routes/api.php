@@ -23,6 +23,7 @@ use App\Http\Controllers\UpvoteController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\InvitationCodeController;
 use App\Http\Controllers\GoogleMapsController;
+use App\Http\Controllers\ReportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -173,6 +174,14 @@ Route::middleware(['auth:api', 'role:Admin'])->prefix('admin')->group(function (
 
     // Notification campaigns
     Route::post('/notifications/campaign', [NotificationController::class, 'storeCampaign']);
+
+    // Reports
+    Route::get('/reports/summary', [ReportController::class, 'summary']);
+    Route::get('/reports/by-category', [ReportController::class, 'byCategory']);
+    Route::get('/reports/by-worker', [ReportController::class, 'byWorker']);
+    Route::get('/reports/by-date', [ReportController::class, 'byDate']);
+    Route::get('/reports/resolution-times', [ReportController::class, 'resolutionTimes']);
+    Route::get('/reports/details', [ReportController::class, 'details']);
 
     Route::get('/admin-only', function () {
         return response()->json([
