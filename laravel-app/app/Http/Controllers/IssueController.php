@@ -148,6 +148,12 @@ class IssueController extends Controller
 
     public function update(Request $request, Issue $issue)
     {
+        $user = auth('api')->user();
+
+        if ($issue->user_id !== $user->id && !$user->hasRole('Admin')) {
+            return response()->json(['message' => 'No autorizado para editar este reporte.'], 403);
+        }
+
         $validated = $request->validate([
             'title'       => 'sometimes|string|max:255',
             'description' => 'sometimes|string',
@@ -156,9 +162,58 @@ class IssueController extends Controller
             'latitude'    => 'sometimes|numeric',
             'longitude'   => 'sometimes|numeric',
             'status_id'   => 'sometimes|exists:issue_status,id',
+            'images'      => 'nullable|array|max:5',
+            'images.*'    => 'image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+            'deleted_images' => 'nullable|array',
+            'deleted_images.*' => 'integer|exists:issue_images,id',
         ]);
-        $issue->update($validated);
-        return response()->json($issue);
+
+        DB::transaction(function () use ($issue, $validated, $request) {
+            $issue->update($validated);
+
+            if (!empty($validated['deleted_images'])) {
+                $images = IssueImage::whereIn('id', $validated['deleted_images'])
+                    ->where('issue_id', $issue->id)
+                    ->get();
+
+                foreach ($images as $image) {
+                    $this->deleteIssueImageFile($image);
+                    $image->delete();
+                }
+            }
+
+            if ($request->hasFile('images')) {
+                foreach ($request->file('images') as $image) {
+                    $path = $this->storeOptimizedImage($image, 'issues');
+                    $issue->images()->create([
+                        'image_url' => Storage::disk('public')->url($path),
+                    ]);
+                }
+            }
+        });
+
+        return response()->json(
+            $issue->fresh()->load('images')
+        );
+    }
+
+    private function deleteIssueImageFile(IssueImage $image): void
+    {
+        $url = $image->image_url;
+
+        if (str_starts_with($url, 'http://') || str_starts_with($url, 'https://')) {
+            $url = parse_url($url, PHP_URL_PATH);
+        }
+
+        $relativePath = ltrim($url, '/');
+
+        if (str_starts_with($relativePath, 'storage/')) {
+            $relativePath = substr($relativePath, 8);
+        }
+
+        if (!empty($relativePath)) {
+            Storage::disk('public')->delete($relativePath);
+        }
     }
 
     public function destroy(Issue $issue)
@@ -256,22 +311,47 @@ class IssueController extends Controller
             'latitude'    => 'sometimes|numeric',
             'longitude'   => 'sometimes|numeric',
             'status_id'   => 'sometimes|exists:issue_status,id',
+            'images'      => 'nullable|array|max:5',
+            'images.*'    => 'image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+            'deleted_images' => 'nullable|array',
+            'deleted_images.*' => 'integer|exists:issue_images,id',
         ]);
 
-        // If status changed, also create history entry
-        if (isset($validated['status_id']) && $validated['status_id'] != $issue->status_id) {
-            $issue->history()->create([
-                'status_id'  => $validated['status_id'],
-                'changed_by' => auth('api')->id(),
-                'changed_at' => now(),
-            ]);
-        }
+        DB::transaction(function () use ($issue, $validated, $request) {
+            if (isset($validated['status_id']) && $validated['status_id'] != $issue->status_id) {
+                $issue->history()->create([
+                    'status_id'  => $validated['status_id'],
+                    'changed_by' => auth('api')->id(),
+                    'changed_at' => now(),
+                ]);
+            }
 
-        $issue->update($validated);
+            $issue->update($validated);
+
+            if (!empty($validated['deleted_images'])) {
+                $images = IssueImage::whereIn('id', $validated['deleted_images'])
+                    ->where('issue_id', $issue->id)
+                    ->get();
+
+                foreach ($images as $image) {
+                    $this->deleteIssueImageFile($image);
+                    $image->delete();
+                }
+            }
+
+            if ($request->hasFile('images')) {
+                foreach ($request->file('images') as $image) {
+                    $path = $this->storeOptimizedImage($image, 'issues');
+                    $issue->images()->create([
+                        'image_url' => Storage::disk('public')->url($path),
+                    ]);
+                }
+            }
+        });
 
         return response()->json([
             'message' => 'Issue actualizado correctamente.',
-            'issue'   => $issue->load(['user:id,first_name,last_name,avatar', 'category', 'status', 'images']),
+            'issue'   => $issue->fresh()->load(['user:id,first_name,last_name,avatar', 'category', 'status', 'images']),
         ]);
     }
 
