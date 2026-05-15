@@ -68,7 +68,7 @@ class ReportController extends Controller
                 ->join('issues', 'issue_history.issue_id', '=', 'issues.id')
                 ->where('issue_history.status_id', $resolvedStatus->id)
                 ->whereBetween('issues.created_at', [$from, $to])
-                ->selectRaw('AVG(TIMESTAMPDIFF(SECOND, issues.created_at, issue_history.changed_at)) as avg')
+                ->selectRaw('AVG(EXTRACT(EPOCH FROM issue_history.changed_at - issues.created_at)) as avg')
                 ->value('avg');
         }
 
@@ -184,7 +184,7 @@ class ReportController extends Controller
                     })
                     ->where('assignments.worker_id', $worker->id)
                     ->whereBetween('assignments.assigned_at', [$from, $to])
-                    ->selectRaw('AVG(TIMESTAMPDIFF(SECOND, assignments.assigned_at, issue_history.changed_at)) as avg')
+                    ->selectRaw('AVG(EXTRACT(EPOCH FROM issue_history.changed_at - assignments.assigned_at)) as avg')
                     ->value('avg');
             }
 
@@ -221,14 +221,23 @@ class ReportController extends Controller
         [$from, $to] = $this->getDateRange($request);
         $groupBy = $request->query('group_by', 'day');
 
-        $dateFormat = match ($groupBy) {
-            'week' => '%x-W%v',
-            'month' => '%Y-%m',
-            default => '%Y-%m-%d',
+        $driver = DB::connection()->getDriverName();
+        $isPgsql = $driver === 'pgsql';
+
+        [$dateFn, $dateFmt] = match ($groupBy) {
+            'week' => $isPgsql
+                ? ["TO_CHAR(%s, 'IYYY-\"W\"IW')", "TO_CHAR(%s, 'IYYY-\"W\"IW')"]
+                : ["DATE_FORMAT(%s, '%%x-W%%v')", "DATE_FORMAT(%s, '%%x-W%%v')"],
+            'month' => $isPgsql
+                ? ["TO_CHAR(%s, 'YYYY-MM')", "TO_CHAR(%s, 'YYYY-MM')"]
+                : ["DATE_FORMAT(%s, '%%Y-%%m')", "DATE_FORMAT(%s, '%%Y-%%m')"],
+            default => $isPgsql
+                ? ["TO_CHAR(%s, 'YYYY-MM-DD')", "TO_CHAR(%s, 'YYYY-MM-DD')"]
+                : ["DATE_FORMAT(%s, '%%Y-%%m-%%d')", "DATE_FORMAT(%s, '%%Y-%%m-%%d')"],
         };
 
         $created = Issue::whereBetween('created_at', [$from, $to])
-            ->selectRaw("DATE_FORMAT(created_at, '{$dateFormat}') as period, count(*) as total")
+            ->selectRaw(sprintf($dateFn, 'created_at') . " as period, count(*) as total")
             ->groupBy('period')
             ->orderBy('period')
             ->get();
@@ -240,7 +249,7 @@ class ReportController extends Controller
                 ->join('issues', 'issue_history.issue_id', '=', 'issues.id')
                 ->where('issue_history.status_id', $resolvedStatus->id)
                 ->whereBetween('issues.created_at', [$from, $to])
-                ->selectRaw("DATE_FORMAT(issue_history.changed_at, '{$dateFormat}') as period, count(*) as total")
+                ->selectRaw(sprintf($dateFmt, 'issue_history.changed_at') . " as period, count(*) as total")
                 ->groupBy('period')
                 ->orderBy('period')
                 ->get();
@@ -278,9 +287,9 @@ class ReportController extends Controller
         $stats = (clone $query)
             ->selectRaw('
                 COUNT(*) as issues_resolved,
-                AVG(TIMESTAMPDIFF(SECOND, issues.created_at, issue_history.changed_at)) as avg_seconds,
-                MIN(TIMESTAMPDIFF(SECOND, issues.created_at, issue_history.changed_at)) as min_seconds,
-                MAX(TIMESTAMPDIFF(SECOND, issues.created_at, issue_history.changed_at)) as max_seconds
+                AVG(EXTRACT(EPOCH FROM issue_history.changed_at - issues.created_at)) as avg_seconds,
+                MIN(EXTRACT(EPOCH FROM issue_history.changed_at - issues.created_at)) as min_seconds,
+                MAX(EXTRACT(EPOCH FROM issue_history.changed_at - issues.created_at)) as max_seconds
             ')
             ->first();
 
@@ -295,7 +304,7 @@ class ReportController extends Controller
             ->selectRaw('
                 users.id, users.first_name, users.last_name, users.email,
                 COUNT(*) as issues_resolved,
-                AVG(TIMESTAMPDIFF(SECOND, issues.created_at, issue_history.changed_at)) as avg_seconds
+                AVG(EXTRACT(EPOCH FROM issue_history.changed_at - issues.created_at)) as avg_seconds
             ')
             ->groupBy('users.id', 'users.first_name', 'users.last_name', 'users.email')
             ->get()
