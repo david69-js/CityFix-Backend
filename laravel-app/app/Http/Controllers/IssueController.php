@@ -139,7 +139,7 @@ class IssueController extends Controller
 
     public function show(Issue $issue)
     {
-        return response()->json($issue->loadCount('comments')->load([
+        $issue->loadCount('comments')->load([
             'user:id,first_name,last_name,avatar',
             'category',
             'status',
@@ -148,7 +148,20 @@ class IssueController extends Controller
                 $query->with('user:id,first_name,last_name,avatar')
                       ->latest();
             }
-        ]));
+        ]);
+
+        $activeAssignment = $issue->assignments()
+            ->whereHas('status', function ($q) {
+                $q->whereIn('name', ['Pending', 'In Progress', 'On Hold']);
+            })
+            ->with('worker:id,first_name,last_name,avatar')
+            ->latest()
+            ->first();
+
+        $data = $issue->toArray();
+        $data['assigned_worker'] = $activeAssignment?->worker;
+
+        return response()->json($data);
     }
 
     public function update(Request $request, Issue $issue)
