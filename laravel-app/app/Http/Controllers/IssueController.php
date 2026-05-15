@@ -30,7 +30,8 @@ class IssueController extends Controller
             'location' => 'required|string|max:255',
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:20480', // 20MB max
+            'images' => 'nullable|array|max:5',
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:5120',
         ]);
 
         $issue = Issue::create([
@@ -44,13 +45,14 @@ class IssueController extends Controller
             'status_id' => 1, // Default status (e.g. Pendiente)
         ]);
 
-        if ($request->hasFile('image')) {
-            $path = $this->storeOptimizedImage($request->file('image'), 'issues');
-
-            IssueImage::create([
-                'issue_id' => $issue->id,
-                'image_url' => $path,
-            ]);
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $path = $this->storeOptimizedImage($image, 'issues');
+                IssueImage::create([
+                    'issue_id' => $issue->id,
+                    'image_url' => $path,
+                ]);
+            }
         }
 
         return response()->json($issue->load('images'), 201);
