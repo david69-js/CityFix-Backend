@@ -6,6 +6,7 @@ use Tymon\JWTAuth\Contracts\JWTSubject;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
 
 class User extends Authenticatable implements JWTSubject
 {
@@ -24,10 +25,28 @@ class User extends Authenticatable implements JWTSubject
         'is_active',
     ];
 
+    protected $appends = [
+        'avatar_url',
+    ];
+
     protected $hidden = [
         'password',
         'google_id',
     ];
+
+    public function getAvatarUrlAttribute(): ?string
+    {
+        if (!$this->avatar) {
+            return null;
+        }
+
+        if (str_starts_with($this->avatar, 'http://') || str_starts_with($this->avatar, 'https://')) {
+            return $this->avatar;
+        }
+
+        $disk = env('FILESYSTEM_DISK', 'local') === 'r2' ? 'r2' : 'public';
+        return Storage::disk($disk)->url($this->avatar);
+    }
 
     public function role(): BelongsTo
     {

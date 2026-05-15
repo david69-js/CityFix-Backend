@@ -7,6 +7,11 @@ use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
+    private function imageDisk(): string
+    {
+        return env('FILESYSTEM_DISK', 'local') === 'r2' ? 'r2' : 'public';
+    }
+
     public function index()
     {
         return response()->json(User::with('role')->get());
@@ -25,7 +30,7 @@ class UserController extends Controller
         ]);
 
         if ($request->hasFile('avatar')) {
-            $validated['avatar'] = $request->file('avatar')->store('avatars', 'public');
+            $validated['avatar'] = $request->file('avatar')->store('avatars', $this->imageDisk());
         }
 
         $validated['password'] = \Illuminate\Support\Facades\Hash::make($validated['password']);
@@ -52,7 +57,7 @@ class UserController extends Controller
         ]);
 
         if ($request->hasFile('avatar')) {
-            $validated['avatar'] = $request->file('avatar')->store('avatars', 'public');
+            $validated['avatar'] = $request->file('avatar')->store('avatars', $this->imageDisk());
         }
 
         if (isset($validated['password'])) {
@@ -83,11 +88,10 @@ class UserController extends Controller
         ]);
 
         if ($request->hasFile('avatar')) {
-            // Optional: Delete old avatar if it exists
-            // if ($user->avatar) {
-            //     \Illuminate\Support\Facades\Storage::disk('public')->delete($user->avatar);
-            // }
-            $validated['avatar'] = $request->file('avatar')->store('avatars', 'public');
+            if ($user->avatar) {
+                \Illuminate\Support\Facades\Storage::disk($this->imageDisk())->delete($user->avatar);
+            }
+            $validated['avatar'] = $request->file('avatar')->store('avatars', $this->imageDisk());
         }
 
         $user->update($validated);

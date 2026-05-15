@@ -11,6 +11,11 @@ use App\Http\Requests\StoreIssueRequest;
 
 class IssueController extends Controller
 {
+    private function imageDisk(): string
+    {
+        return env('FILESYSTEM_DISK', 'local') === 'r2' ? 'r2' : 'public';
+    }
+
     public function store(StoreIssueRequest $request)
     {
         $defaultStatus = IssueStatus::orderBy('sort_order')->first();
@@ -41,7 +46,7 @@ class IssueController extends Controller
 
             if ($request->hasFile('images')) {
                 foreach ($request->file('images') as $image) {
-                    $path = $image->store('issues', config('filesystems.default'));
+                    $path = $image->store('issues', $this->imageDisk());
 
                     $issue->images()->create([
                         'image_url' => $path,
