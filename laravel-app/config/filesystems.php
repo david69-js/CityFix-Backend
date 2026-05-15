@@ -36,7 +36,7 @@ return [
             'region' => env('AWS_DEFAULT_REGION', 'auto'),
             'bucket' => env('AWS_BUCKET', 'cityfix'),
             'endpoint' => env('AWS_ENDPOINT'),
-            'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', true),
+            'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', true) === true || env('AWS_USE_PATH_STYLE_ENDPOINT', true) === 'true',
             'throw' => true,
         ],
     ],
