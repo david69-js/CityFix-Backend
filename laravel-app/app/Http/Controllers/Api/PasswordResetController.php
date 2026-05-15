@@ -14,6 +14,15 @@ use Illuminate\Support\Facades\Mail;
 
 class PasswordResetController extends Controller
 {
+    public function checkEmail(ForgotPasswordRequest $request)
+    {
+        $user = User::where('email', $request->email)->first();
+
+        return response()->json([
+            'exists' => !is_null($user),
+        ]);
+    }
+
     public function requestReset(ForgotPasswordRequest $request)
     {
         $user = User::where('email', $request->email)->first();

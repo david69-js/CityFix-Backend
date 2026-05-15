@@ -93,6 +93,7 @@ Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/google', [AuthController::class, 'loginWithGoogle']);
 
+    Route::post('/check-email', [PasswordResetController::class, 'checkEmail']);
     Route::post('/forgot-password', [PasswordResetController::class, 'requestReset']);
     Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
 
