@@ -32,16 +32,16 @@ if [ "${CACHE_STORE:-database}" = "database" ] && [ "${ALLOW_DATABASE_CACHE:-fal
   export CACHE_STORE="file"
 fi
 
-mkdir -p /var/www/sorherminia/storage/framework/views
-mkdir -p /var/www/sorherminia/storage/framework/cache/data
-mkdir -p /var/www/sorherminia/storage/framework/sessions
-mkdir -p /var/www/sorherminia/storage/logs
-mkdir -p /var/www/sorherminia/bootstrap/cache
+mkdir -p /var/www/cityfix/storage/framework/views
+mkdir -p /var/www/cityfix/storage/framework/cache/data
+mkdir -p /var/www/cityfix/storage/framework/sessions
+mkdir -p /var/www/cityfix/storage/logs
+mkdir -p /var/www/cityfix/bootstrap/cache
 
-chown -R www-data:www-data /var/www/sorherminia/storage /var/www/sorherminia/bootstrap/cache
-chmod -R ug+rwX /var/www/sorherminia/storage /var/www/sorherminia/bootstrap/cache
+chown -R www-data:www-data /var/www/cityfix/storage /var/www/cityfix/bootstrap/cache
+chmod -R ug+rwX /var/www/cityfix/storage /var/www/cityfix/bootstrap/cache
 
-export VIEW_COMPILED_PATH="/var/www/sorherminia/storage/framework/views"
+export VIEW_COMPILED_PATH="/var/www/cityfix/storage/framework/views"
 
 echo "Preparing Laravel caches and storage link..."
 php artisan optimize:clear || true
