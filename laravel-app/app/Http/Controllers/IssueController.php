@@ -150,16 +150,16 @@ class IssueController extends Controller
             }
         ]);
 
-        $activeAssignment = $issue->assignments()
+        $activeAssignments = $issue->assignments()
             ->whereHas('status', function ($q) {
                 $q->whereIn('name', ['Pending', 'In Progress', 'On Hold']);
             })
             ->with('worker:id,first_name,last_name,avatar')
             ->latest()
-            ->first();
+            ->get();
 
         $data = $issue->toArray();
-        $data['assigned_worker'] = $activeAssignment?->worker;
+        $data['assigned_workers'] = $activeAssignments->pluck('worker');
 
         return response()->json($data);
     }
