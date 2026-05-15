@@ -48,17 +48,27 @@ class UpvoteController extends Controller
     {
         $userId = auth('api')->id();
 
-        $upvote = Upvote::where('issue_id', $issue->id)->where('user_id', $userId)->first();
+        $existing = Upvote::where('issue_id', $issue->id)->where('user_id', $userId)->first();
 
-        if ($upvote) {
-            $upvote->delete();
-            return response()->json(['message' => 'Upvote removido'], 200);
-        } else {
-            Upvote::create([
-                'issue_id' => $issue->id,
-                'user_id' => $userId
+        if ($existing) {
+            $existing->delete();
+
+            return response()->json([
+                'message' => 'Upvote removido',
+                'upvoted' => false,
+                'upvotes_count' => $issue->upvotes()->count(),
             ]);
-            return response()->json(['message' => 'Upvote agregado'], 201);
         }
+
+        Upvote::create([
+            'issue_id' => $issue->id,
+            'user_id' => $userId
+        ]);
+
+        return response()->json([
+            'message' => 'Upvote agregado',
+            'upvoted' => true,
+            'upvotes_count' => $issue->upvotes()->count(),
+        ]);
     }
 }
