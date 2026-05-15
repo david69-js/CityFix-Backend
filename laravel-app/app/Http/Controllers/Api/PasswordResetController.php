@@ -36,20 +36,14 @@ class PasswordResetController extends Controller
             'expires_at' => now()->addMinutes(30),
         ]);
 
-        $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
-        $resetLink = "{$frontendUrl}/reset-password?token={$plainToken}&email=" . urlencode($user->email);
-
-        Mail::send([], [], function ($message) use ($user, $resetLink) {
+        Mail::send([], [], function ($message) use ($user, $plainToken) {
             $message->to($user->email)
                 ->subject('Recuperación de contraseña')
                 ->html("
                     <h1>Recuperación de Contraseña</h1>
-                    <p>Has solicitado restablecer tu contraseña. Haz clic en el siguiente enlace para continuar:</p>
-                    <p><a href='{$resetLink}' style='padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;'>Restablecer Contraseña</a></p>
+                    <p>Has solicitado restablecer tu contraseña. Usa el siguiente código en la aplicación para continuar:</p>
+                    <p style='font-size: 24px; font-weight: bold; letter-spacing: 4px; text-align: center; padding: 15px; background-color: #f5f5f5; border-radius: 5px;'>{$plainToken}</p>
                     <p>Si no solicitaste este cambio, puedes ignorar este correo.</p>
-                    <br>
-                    <p>O copia y pega este enlace en tu navegador:</p>
-                    <p>{$resetLink}</p>
                 ");
         });
 
