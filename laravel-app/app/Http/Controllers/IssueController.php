@@ -49,7 +49,7 @@ class IssueController extends Controller
 
             IssueImage::create([
                 'issue_id' => $issue->id,
-                'image_url' => Storage::disk('public')->url($path)
+                'image_url' => $path,
             ]);
         }
 
@@ -67,18 +67,21 @@ class IssueController extends Controller
         $manager = new ImageManager(new Driver());
         $image = $manager->read($file->getRealPath());
 
-        // Redimensionar si es más ancho que 1920px
         if ($image->width() > 1920) {
             $image->scaleDown(width: 1920);
         }
 
-        // Codificar como JPEG al 80% de calidad
         $encoded = $image->toJpeg(quality: 80);
 
         $filename = $folder . '/' . uniqid('img_', true) . '.jpg';
-        Storage::disk('public')->put($filename, $encoded);
+        Storage::disk($this->imageDisk())->put($filename, $encoded);
 
         return $filename;
+    }
+
+    private function imageDisk(): string
+    {
+        return env('FILESYSTEM_DISK', 'local') === 'r2' ? 'r2' : 'public';
     }
 
     public function feed(Request $request)
@@ -186,7 +189,7 @@ class IssueController extends Controller
                 foreach ($request->file('images') as $image) {
                     $path = $this->storeOptimizedImage($image, 'issues');
                     $issue->images()->create([
-                        'image_url' => Storage::disk('public')->url($path),
+                        'image_url' => $path,
                     ]);
                 }
             }
@@ -212,7 +215,7 @@ class IssueController extends Controller
         }
 
         if (!empty($relativePath)) {
-            Storage::disk('public')->delete($relativePath);
+            Storage::disk($this->imageDisk())->delete($relativePath);
         }
     }
 
@@ -343,7 +346,7 @@ class IssueController extends Controller
                 foreach ($request->file('images') as $image) {
                     $path = $this->storeOptimizedImage($image, 'issues');
                     $issue->images()->create([
-                        'image_url' => Storage::disk('public')->url($path),
+                        'image_url' => $path,
                     ]);
                 }
             }

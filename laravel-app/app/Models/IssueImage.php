@@ -35,6 +35,12 @@ class IssueImage extends Model
             return $this->image_url;
         }
 
-        return Storage::url($this->image_url);
+        $path = $this->image_url;
+
+        if (str_starts_with($path, '/storage/')) {
+            return Storage::disk('public')->url(substr($path, 9));
+        }
+
+        return Storage::disk(env('FILESYSTEM_DISK', 'local') === 'r2' ? 'r2' : 'public')->url($path);
     }
 }
