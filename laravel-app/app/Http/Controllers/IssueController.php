@@ -107,6 +107,16 @@ class IssueController extends Controller
         })
         ->withCount(['upvotes', 'comments']);
 
+        // Incluir has_upvoted si se envía voter_id
+        $voterId = $request->query('voter_id');
+        if ($voterId) {
+            $query->withExists([
+                'upvotes as has_upvoted' => function ($q) use ($voterId) {
+                    $q->where('user_id', $voterId);
+                }
+            ]);
+        }
+
         // Filtro por búsqueda de texto (título, descripción, ubicación)
         if ($request->has('search')) {
             $search = $request->query('search');
@@ -149,6 +159,14 @@ class IssueController extends Controller
                       ->latest();
             }
         ]);
+
+        // Incluir has_upvoted si se envía voter_id
+        $voterId = request()->query('voter_id');
+        if ($voterId) {
+            $issue->has_upvoted = $issue->upvotes()
+                ->where('user_id', $voterId)
+                ->exists();
+        }
 
         $workers = $issue->assignments()
             ->whereHas('status', function ($q) {
