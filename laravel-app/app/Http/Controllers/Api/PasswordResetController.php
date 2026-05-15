@@ -46,23 +46,25 @@ class PasswordResetController extends Controller
             'expires_at' => now()->addMinutes(30),
         ]);
 
-        try {
-            Mail::send([], [], function ($message) use ($user, $plainToken) {
-                $message->to($user->email)
-                    ->subject('Recuperación de contraseña')
-                    ->html("
-                        <h1>Recuperación de Contraseña</h1>
-                        <p>Has solicitado restablecer tu contraseña. Usa el siguiente código en la aplicación para continuar:</p>
-                        <p style='font-size: 24px; font-weight: bold; letter-spacing: 4px; text-align: center; padding: 15px; background-color: #f5f5f5; border-radius: 5px;'>{$plainToken}</p>
-                        <p>Si no solicitaste este cambio, puedes ignorar este correo.</p>
-                    ");
-            });
-        } catch (\Throwable $e) {
-            Log::error('Error al enviar email de recuperación: ' . $e->getMessage(), [
-                'user_id' => $user->id,
-                'email' => $user->email,
-            ]);
-        }
+        dispatch(function () use ($user, $plainToken) {
+            try {
+                Mail::send([], [], function ($message) use ($user, $plainToken) {
+                    $message->to($user->email)
+                        ->subject('Recuperación de contraseña')
+                        ->html("
+                            <h1>Recuperación de Contraseña</h1>
+                            <p>Has solicitado restablecer tu contraseña. Usa el siguiente código en la aplicación para continuar:</p>
+                            <p style='font-size: 24px; font-weight: bold; letter-spacing: 4px; text-align: center; padding: 15px; background-color: #f5f5f5; border-radius: 5px;'>{$plainToken}</p>
+                            <p>Si no solicitaste este cambio, puedes ignorar este correo.</p>
+                        ");
+                });
+            } catch (\Throwable $e) {
+                Log::error('Error al enviar email de recuperación: ' . $e->getMessage(), [
+                    'user_id' => $user->id,
+                    'email' => $user->email,
+                ]);
+            }
+        })->afterResponse();
 
         return response()->json([
             'message' => 'Si el correo existe, se enviará un enlace de recuperación.'
