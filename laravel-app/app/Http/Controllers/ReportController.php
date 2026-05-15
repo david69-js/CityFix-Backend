@@ -122,7 +122,7 @@ class ReportController extends Controller
                     ->where('issues.category_id', $catId)
                     ->where('issue_history.status_id', $resolvedStatus->id)
                     ->whereBetween('issues.created_at', [$from, $to])
-                    ->selectRaw('AVG(TIMESTAMPDIFF(SECOND, issues.created_at, issue_history.changed_at)) as avg')
+->selectRaw('AVG(EXTRACT(EPOCH FROM issue_history.changed_at - issues.created_at)) as avg')
                     ->value('avg');
             }
 
