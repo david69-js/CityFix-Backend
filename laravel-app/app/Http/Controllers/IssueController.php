@@ -229,6 +229,21 @@ class IssueController extends Controller
 
     public function updateStatus(Request $request, Issue $issue)
     {
+        $user = auth('api')->user();
+
+        if (!$user->hasRole('Admin')) {
+            $isAssigned = $issue->assignments()
+                ->where('worker_id', $user->id)
+                ->whereHas('status', function ($q) {
+                    $q->whereIn('name', ['Pending', 'In Progress', 'On Hold']);
+                })
+                ->exists();
+
+            if (!$isAssigned) {
+                return response()->json(['message' => 'No autorizado para cambiar el estado de este reporte.'], 403);
+            }
+        }
+
         $validated = $request->validate([
             'status_id' => 'required|exists:issue_status,id',
         ]);
