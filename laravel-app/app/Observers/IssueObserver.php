@@ -43,32 +43,60 @@ class IssueObserver
 
     public function updated(Issue $issue): void
     {
-        // Detectar si el status_id cambió
-        if ($issue->isDirty('status_id')) {
-            $reporter = $issue->user;
-            if ($reporter) {
-                $statusName = $issue->status->name ?? 'desconocido';
-                $title = 'Actualización de Reporte';
-                $message = "El estado de tu reporte '{$issue->title}' ha cambiado a: {$statusName}";
+        if (!$issue->isDirty('status_id')) {
+            return;
+        }
 
-                Notification::create([
-                    'user_id' => $reporter->id,
-                    'type' => 'status_updated',
-                    'title' => $title,
-                    'message' => $message,
-                    'related_id' => $issue->id,
-                    'is_read' => false,
+        $statusName = $issue->status->name ?? 'desconocido';
+        $title = 'Actualización de Reporte';
+        $message = "El estado del reporte '{$issue->title}' ha cambiado a: {$statusName}";
+
+        $notified = [];
+
+        // Notificar al reporter (dueño del issue)
+        $reporter = $issue->user;
+        if ($reporter) {
+            $this->createNotification($reporter, 'status_updated', $title, $message, $issue->id);
+            $notified[] = $reporter->id;
+        }
+
+        // Notificar a los workers asignados activamente
+        $workers = $issue->assignments()
+            ->whereHas('status', function ($q) {
+                $q->whereIn('name', ['Pending', 'In Progress', 'On Hold']);
+            })
+            ->with('worker')
+            ->get()
+            ->pluck('worker')
+            ->filter()
+            ->unique('id');
+
+        foreach ($workers as $worker) {
+            if (!in_array($worker->id, $notified)) {
+                $this->createNotification($worker, 'status_updated', $title, $message, $issue->id);
+                $notified[] = $worker->id;
+            }
+        }
+    }
+
+    private function createNotification($user, string $type, string $title, string $message, ?int $relatedId): void
+    {
+        Notification::create([
+            'user_id' => $user->id,
+            'type' => $type,
+            'title' => $title,
+            'message' => $message,
+            'related_id' => $relatedId,
+            'is_read' => false,
+        ]);
+
+        if ($user->fcm_token) {
+            try {
+                FcmService::sendPush($user->fcm_token, $title, $message, [
+                    'issue_id' => $relatedId,
                 ]);
-
-                if ($reporter->fcm_token) {
-                    try {
-                        FcmService::sendPush($reporter->fcm_token, $title, $message, [
-                            'issue_id' => $issue->id
-                        ]);
-                    } catch (\Throwable $e) {
-                        \Log::warning("FCM push failed for user {$reporter->id}: " . $e->getMessage());
-                    }
-                }
+            } catch (\Throwable $e) {
+                \Log::warning("FCM push failed for user {$user->id}: " . $e->getMessage());
             }
         }
     }
