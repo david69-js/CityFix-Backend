@@ -141,7 +141,7 @@ Route::post('/invitation-codes/verify', [InvitationCodeController::class, 'verif
 // API RESOURCES — Solo lectura (públicos)
 // =============================
 Route::apiResource('issues', IssueController::class)->only(['index', 'show']);
-Route::apiResource('categories', CategoryController::class)->only(['index', 'show']);
+Route::apiResource('categories', CategoryController::class)->only(['index', 'show', 'store']);
 Route::apiResource('issue-statuses', IssueStatusController::class)->only(['index', 'show']);
 Route::apiResource('assignment-statuses', AssignmentStatusController::class)->only(['index', 'show']);
 Route::apiResource('roles', RoleController::class)->only(['index', 'show']);
@@ -167,6 +167,9 @@ Route::middleware(['auth:api', 'role:Admin'])->prefix('admin')->group(function (
     // User management
     Route::apiResource('users', UserController::class);
     Route::patch('users/{user}/toggle-active', [UserController::class, 'toggleActive']);
+
+    // Category management
+    Route::apiResource('categories', CategoryController::class)->except(['index', 'show']);
 
     // Issue management (view all, edit, hide/show)
     Route::get('/issues', [IssueController::class, 'adminIndex']);

@@ -123,4 +123,49 @@ class IssueController extends Controller
             'data' => $issue
         ]);
     }
+
+    public function update(Request $request, Issue $issue)
+    {
+        // Validar que el usuario sea el dueño o admin
+        if ($issue->user_id !== $request->user()->id && $request->user()->role_id !== 1) {
+            return response()->json(['message' => 'No autorizado para editar este reporte.'], 403);
+        }
+
+        // Actualizar datos básicos
+        $issue->update($request->only([
+            'category_id',
+            'title',
+            'description',
+            'location',
+            'latitude',
+            'longitude',
+            'is_hidden'
+        ]));
+
+        // Manejar nueva imagen (soporta los campos 'image' o 'images')
+        $files = [];
+        if ($request->hasFile('image')) {
+            $files[] = $request->file('image');
+        } elseif ($request->hasFile('images')) {
+            $files = is_array($request->file('images')) ? $request->file('images') : [$request->file('images')];
+        }
+
+        if (!empty($files)) {
+            // Si queremos que la nueva imagen sea la principal, podríamos limpiar las anteriores
+            // Por ahora, añadimos la nueva como evidencia adicional
+            foreach ($files as $file) {
+                $path = $file->store('issues', config('filesystems.default'));
+                $issue->images()->create([
+                    'image_url' => $path,
+                ]);
+            }
+        }
+
+        $issue->load(['user', 'category', 'status', 'images']);
+
+        return response()->json([
+            'message' => 'Reporte actualizado correctamente.',
+            'data' => $issue
+        ]);
+    }
 }
