@@ -11,6 +11,7 @@ use App\Models\IssueStatus;
 use App\Models\Upvote;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReportController extends Controller
 {
@@ -396,5 +397,74 @@ class ReportController extends Controller
         });
 
         return response()->json($issues);
+    }
+
+    // =============================
+    // PDF METHODS
+    // =============================
+
+    public function pdfSummary(Request $request)
+    {
+        [$from, $to] = $this->getDateRange($request);
+        $data = $this->summary($request)->getData(true);
+        $data['from'] = $from;
+        $data['to'] = $to;
+        $pdf = Pdf::loadView('reports.pdf.summary', $data);
+        return $pdf->download("resumen-{$from}-{$to}.pdf");
+    }
+
+    public function pdfByCategory(Request $request)
+    {
+        [$from, $to] = $this->getDateRange($request);
+        $data = $this->byCategory($request)->getData(true);
+        $pdf = Pdf::loadView('reports.pdf.by-category', $data);
+        return $pdf->download("reporte-por-categoria-{$from}-{$to}.pdf");
+    }
+
+    public function pdfByWorker(Request $request)
+    {
+        [$from, $to] = $this->getDateRange($request);
+        $data = $this->byWorker($request)->getData(true);
+        $pdf = Pdf::loadView('reports.pdf.by-worker', $data);
+        return $pdf->download("reporte-por-trabajador-{$from}-{$to}.pdf");
+    }
+
+    public function pdfByDate(Request $request)
+    {
+        [$from, $to] = $this->getDateRange($request);
+        $data = $this->byDate($request)->getData(true);
+        $pdf = Pdf::loadView('reports.pdf.by-date', $data);
+        return $pdf->download("reporte-por-fecha-{$from}-{$to}.pdf");
+    }
+
+    public function pdfResolutionTimes(Request $request)
+    {
+        [$from, $to] = $this->getDateRange($request);
+        $data = $this->resolutionTimes($request)->getData(true);
+        if (isset($data['message'])) {
+            return response()->json($data, 404);
+        }
+        $pdf = Pdf::loadView('reports.pdf.resolution-times', $data);
+        return $pdf->download("tiempos-resolucion-{$from}-{$to}.pdf");
+    }
+
+    public function pdfDetails(Request $request)
+    {
+        [$from, $to] = $this->getDateRange($request);
+        $issues = $this->details($request)->getData(true);
+
+        $items = [];
+        if (isset($issues['data'])) {
+            $items = $issues['data'];
+        } elseif (isset($issues[0])) {
+            $items = $issues;
+        }
+
+        $pdf = Pdf::loadView('reports.pdf.details', [
+            'from' => $from,
+            'to' => $to,
+            'issues' => $items,
+        ]);
+        return $pdf->download("detalle-incidencias-{$from}-{$to}.pdf");
     }
 }

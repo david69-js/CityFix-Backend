@@ -179,13 +179,21 @@ Route::middleware(['auth:api', 'role:Admin'])->prefix('admin')->group(function (
     // Notification campaigns
     Route::post('/notifications/campaign', [NotificationController::class, 'storeCampaign']);
 
-    // Reports
+    // Reports (JSON)
     Route::get('/reports/summary', [ReportController::class, 'summary']);
     Route::get('/reports/by-category', [ReportController::class, 'byCategory']);
     Route::get('/reports/by-worker', [ReportController::class, 'byWorker']);
     Route::get('/reports/by-date', [ReportController::class, 'byDate']);
     Route::get('/reports/resolution-times', [ReportController::class, 'resolutionTimes']);
     Route::get('/reports/details', [ReportController::class, 'details']);
+
+    // Reports (PDF download)
+    Route::get('/reports/pdf/summary', [ReportController::class, 'pdfSummary']);
+    Route::get('/reports/pdf/by-category', [ReportController::class, 'pdfByCategory']);
+    Route::get('/reports/pdf/by-worker', [ReportController::class, 'pdfByWorker']);
+    Route::get('/reports/pdf/by-date', [ReportController::class, 'pdfByDate']);
+    Route::get('/reports/pdf/resolution-times', [ReportController::class, 'pdfResolutionTimes']);
+    Route::get('/reports/pdf/details', [ReportController::class, 'pdfDetails']);
 
     Route::get('/admin-only', function () {
         return response()->json([
